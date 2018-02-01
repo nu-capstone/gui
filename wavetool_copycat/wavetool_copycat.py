@@ -1,67 +1,61 @@
 #!/usr/bin/env python
 import Tkinter as tk
 from PIL import Image, ImageTk
+from ppg_graph import ppg_graph
 
-class Application:
+class ppg_highlevel:
 	def __init__(self, master): 
-		master.title('Wavetool Copycat')
-		self.createMenu(root)
-		self.ppg_highLevelControl(root)
-		self.frame_ppg_LEDOptions(root)
+		self.create_banner(master)
+		self.ppg_highLevelControl(master)
+		self.frame_ppg_LEDOptions(master)
 
 
-	def createMenu(self, master): #menu pane configuration
-		menubar = tk.Menu(master) 
-		master.config(menu=menubar)
+	def create_banner(self, master): #menu pane configuration
 
-		menubar.add_command(label="File")
-		menubar.add_command(label="View")
-		menubar.add_command(label="Tools")
-		menubar.add_command(label="Help")
-
-		img = ImageTk.PhotoImage(Image.open("salehi-m.png"))
+		img = ImageTk.PhotoImage(Image.open("heart_box_logo.png"))
 		self.picture_frame = tk.Frame(master, bd = 0)
 		self.picture_frame.grid(row = 0, column = 0)
 		self.panel = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
 		self.panel2 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
 		self.panel3 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
 		self.panel4 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
-		self.panel5 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
-		self.panel6 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
-		self.panel7 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
-		self.panel8 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
-		self.panel9 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
+		#self.panel5 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
+		#self.panel6 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
+		#self.panel7 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
+		#self.panel8 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
+		#self.panel9 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
 		#self.panel10 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0)
 
 		self.panel.image = img
 		self.panel2.image = img
 		self.panel3.image = img
 		self.panel4.image = img
-		self.panel5.image = img
-		self.panel6.image = img
-		self.panel7.image = img
-		self.panel8.image = img
-		self.panel9.image = img
+		#self.panel5.image = img
+		#self.panel6.image = img
+		#self.panel7.image = img
+		#self.panel8.image = img
+		#self.panel9.image = img
 		#self.panel10.image = img
 
 		self.panel.grid(row = 0, column = 0)
 		self.panel2.grid(row = 0, column = 1)
 		self.panel3.grid(row = 0, column = 2)
 		self.panel4.grid(row = 0, column = 3)
-		self.panel5.grid(row = 0, column = 4)
-		self.panel6.grid(row = 0, column = 5)
-		self.panel7.grid(row = 0, column = 6)
-		self.panel8.grid(row = 0, column = 7)
-		self.panel9.grid(row = 0, column = 8)
+		#self.panel5.grid(row = 0, column = 4)
+		#self.panel6.grid(row = 0, column = 5)
+		#self.panel7.grid(row = 0, column = 6)
+		#self.panel8.grid(row = 0, column = 7)
+		#self.panel9.grid(row = 0, column = 8)
 		#self.panel10.grid(row = 0, column = 9)
 
 
 	def ppg_highLevelControl(self, master): #button for switching into register level
 		self.frame_register = tk.Frame(master, bd = 0)
 		self.frame_register.grid(row = 1, column = 0, sticky = tk.E)
+		#self.ppg_graph_page = ppg_graph(master)
 
-		self.switchTo_RegisterLevel = tk.Button(self.frame_register, text="Go to Register Level", height = 2)
-		self.switchTo_RegisterLevel.config(font=(11))
+		self.switchTo_RegisterLevel = tk.Button(self.frame_register, text="Go to Register Level", height = 1)
+		self.switchTo_RegisterLevel.config(font=(8))
 		self.switchTo_RegisterLevel.grid(row = 0, column = 0, pady = 5, padx = 20)
 
 	def frame_ppg_LEDOptions(self, master): #container for all LED (slotA/B) options
@@ -370,10 +364,32 @@ class Application:
 		self.LED_3_mA_text = tk.Label(self.frame_LED_3_final_I_LED_field, text = "mA")
 		self.LED_3_mA_text.grid(row = 0, column = 2, sticky = tk.E)
 
+	def show(self):
+		self.lift()
 
 if __name__ == "__main__":
 	root = tk.Tk()
-	app = Application(root)
+	root.title('HeartBox Wavetool')
+
+	root.file_button = tk.Menubutton(root, text="File")
+	root.view_button = tk.Menubutton(root, text="View") 
+	root.tools_button = tk.Menubutton(root, text="Tools") 
+	root.help_button = tk.Menubutton(root, text="Help") 
+	root.file_button.grid(row = 0, column = 0)
+	root.view_button.grid(row = 0, column = 1)
+	root.tools_button.grid(row = 0, column = 2)
+	root.help_button.grid(row = 0, column = 3)
+	root.columnconfigure(0, weight = 0)
+	root.columnconfigure(1, weight = 0)
+	root.columnconfigure(2, weight = 0)
+	root.columnconfigure(3, weight = 0)
+	root.columnconfigure(4, weight = 1)
+
+	ppg_high_level_view = tk.Frame(root, bd = 0)
+	ppg_high_level_view.grid(row = 1, column = 0, columnspan = 5)
+
+	app = ppg_highlevel(ppg_high_level_view)
+
 	root.resizable(width=False, height=False)
 	root.mainloop()
 	root.destroy()
