@@ -1,30 +1,40 @@
-#!/usr/bin/env python
-import Tkinter as tk
-from PIL import Image, ImageTk
+#---------Imports
+from numpy import arange, sin, pi
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+import Tkinter as Tk
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-matplotlib.use("TkAgg")
-from numpy import arange, sin, pi
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+import pdb
+#---------End of imports
+def animate(ax):
+    x = np.arange(0, 2*np.pi, 0.01)        # x-array
+    line, = ax.plot(x, np.random.rand(x.size))
+    line.set_ydata(np.sin(x/10.0))  # update the data
+    return line,
 
 class ppg_graph:
-	def __init__(self, master):
-		tk.Frame.__init__(self, master)
-		fig = plt.Figure()
-		x = np.arange(0, 2*np.pi, 0.01)        # x-array
-		canvas = FigureCanvasTkAgg(fig, master=master)
-		canvas.get_tk_widget().grid(column=0,row=1)
+    def __init__(self, master):
+    	y = 2
+    def plot(self, master):
 
-		ax = fig.add_subplot(111)
-		line, = ax.plot(x, np.sin(x))
-		ani = animation.FuncAnimation(fig, self.animate, np.arange(1, 200), interval=25, blit=False)
+        fig = plt.Figure()
+        x = np.arange(0, 2*np.pi, 0.01)        # x-array
+        label = Tk.Label(root,text="SHM Simulation").grid(column=0, row=0)
+       	canvas = FigureCanvasTkAgg(fig, master=root)
+        canvas.get_tk_widget().grid(column=0,row=1)
 
-	def animate(i):
-		line.set_ydata(np.sin(x+i/10.0))  # update the data
-		return line,
+        ax = fig.add_subplot(111)
+        line, = ax.plot(x, np.random.rand(x.size))
+        ani = animation.FuncAnimation(fig, animate(ax), np.arange(1, 200),, interval=25, blit=False)
+        #plt.show()
+        return ani
 
-	def show(self):
-		self.lift()
+if __name__ == "__main__":
+    #matplotlib.use('Qt4Agg', warn=True)
+    root = Tk.Tk()
+    app = ppg_graph(root)
+    xani = app.plot(root)
+    Tk.mainloop()
