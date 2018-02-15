@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 import Tkinter as tk
+import ttk
 from PIL import Image, ImageTk
-from ppg_graph import ppg_graph
+from graph_viewer import graph_viewer
+
+def create_graph_window(master):
+	x = graph_viewer(master)
 
 class ppg_highlevel:
 	def __init__(self, master): 
@@ -55,7 +59,7 @@ class ppg_highlevel:
 		#self.ppg_graph_page = ppg_graph(master)
 
 		self.switchTo_RegisterLevel = tk.Button(self.frame_register, text="Go to Register Level", height = 1)
-		self.switchTo_RegisterLevel.config(font=(8))
+		self.switchTo_RegisterLevel.config(font=(6))
 		self.switchTo_RegisterLevel.grid(row = 0, column = 0, pady = 5, padx = 20)
 
 	def frame_ppg_LEDOptions(self, master): #container for all LED (slotA/B) options
@@ -375,15 +379,35 @@ if __name__ == "__main__":
 	root.view_button = tk.Menubutton(root, text="View") 
 	root.tools_button = tk.Menubutton(root, text="Tools") 
 	root.help_button = tk.Menubutton(root, text="Help") 
+
+
 	root.file_button.grid(row = 0, column = 0)
 	root.view_button.grid(row = 0, column = 1)
 	root.tools_button.grid(row = 0, column = 2)
 	root.help_button.grid(row = 0, column = 3)
-	root.columnconfigure(0, weight = 0)
+	root.columnconfigure(0, weight = 0) 
 	root.columnconfigure(1, weight = 0)
 	root.columnconfigure(2, weight = 0)
 	root.columnconfigure(3, weight = 0)
 	root.columnconfigure(4, weight = 1)
+
+	root.file_button.menu= tk.Menu(root.file_button, tearoff = 0)
+	root.file_button['menu'] = root.file_button.menu
+	root.file_button.menu.add_command(label="Connect")
+	root.file_button.menu.add_command(label="Disconnect Ctrl+D")
+	root.file_button.menu.add_separator()
+	root.file_button.menu.add_command(label="Register Dump")
+	root.file_button.menu.add_separator()
+	root.file_button.menu.add_command(label="Load Cfg Ctrl+L")
+	root.file_button.menu.add_command(label="Save Cfg Ctrl+S")
+	root.file_button.menu.add_command(label="Apply Config")
+	root.file_button.menu.add_separator()
+	root.file_button.menu.add_command(label="Exit")
+
+	root.view_button.menu= tk.Menu(root.view_button, tearoff = 0)
+	root.view_button['menu'] = root.view_button.menu
+	root.view_button.menu.add_command(label="Graph View", command = create_graph_window(root))
+
 
 	ppg_high_level_view = tk.Frame(root, bd = 0)
 	ppg_high_level_view.grid(row = 1, column = 0, columnspan = 5)
