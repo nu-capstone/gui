@@ -11,13 +11,18 @@ import pdb
 from scipy import signal
 import multiprocessing
 import socket
+import time
 
-UDP_IP = "192.168.56.1"
-UDP_PORT = 50007
 condition_set = ('Normal', 'Warning', 'Critical')
 deg =  u"\u00b0"
-q = multiprocessing.Queue()
 isComm = 1
+UDP_IP = "192.168.56.1"
+UDP_PORT = 50007
+
+q = multiprocessing.Queue()
+filterCoeffB_H, filterCoeffA_H = signal.butter(5,.01,'highpass')
+filterCoeffB_ppg_L, filterCoeffA_ppg_L = signal.butter(5,.6,'lowpass')
+filter_length = 20
 
 def simulation(q):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
@@ -26,32 +31,42 @@ def simulation(q):
 	while True:
 			#time.sleep(1)
 		data, addr = sock.recvfrom(100)
-		sample = int(data[42:50],16);
-
+		sample = int(data[10:18],16);
+		print data + '\n'
+		#time.sleep()
+		#sample = 0.00025
+		#print sample
 				#here send any data you want to send to the other process, can be any pickable object
 		q.put(sample)
 	sock.close()
 	q.put('Q')
 
+
 class heartbox_wave_viewer:
 	def __init__(self):
 		self.root = tk.Tk()
+		self.numSamples_ppg = 0
+		self.fifo_ppg = np.zeros(21)
+
 		self.root.title('HeartBox Wavetool')
 		self.root.minsize(width=900, height = 700)
 		self.setup_plots()
 		self.viewer_layout()
 		self.startup()
 
-
 	def startup(self):
-		#q = multiprocessing.Queue()
 
 		#Create and start the simulation process
-		self.simulate=multiprocessing.Process(None,simulation,args=(q,))
-		self.simulate.start()
+
 		#pdb.set_trace()
 		#for offline viewing, reads data from csv
-		self.do_one_frame()
+		if (isComm):
+			self.simulate=multiprocessing.Process(None,simulation,args=(q,))
+			self.simulate.start()
+			#pdb.set_trace()
+			self.read_live_samples()
+		else:
+			self.read_recorded_samples()
 
 	#setup elements needed for plots
 	def setup_plots(self):
@@ -211,48 +226,40 @@ class heartbox_wave_viewer:
 	def read_recorded_samples(self):
 		self.n = self.n + 1
 		self.update_viewer()
-		self.root.after(1, self.read_recorded_samples)
+		#pdb.set_trace()
+		self.root.after(0, self.read_recorded_samples)
 
-	#graph renderer for live data
-	def read_live_samples(self):
-		while(~q.empty()):
-			self.ecg_data[n] = q.get_notwait()
-			self.n = self.n + 1
-
-		self.update_viewer()
-		self.root.after(1, self.read_live_samples)
-
-	#renders a single frame of plotting ECG/PPG data and biometrics	
 	def update_viewer(self):
-
 		#uses stored data for waveforms
 		self.ecg_im.set_xdata(np.arange(self.n))
 		self.ecg_im.set_ydata(self.ecg_data[0: self.n])
 		self.ppg_im.set_xdata(np.arange(self.n))
 		self.ppg_im.set_ydata(self.ppg_data[0: self.n])
 		
-		self.heartbeat_var = np.random.randint(40, 60)
-		self.SP02_var = np.random.randint(20, 30)
-		self.temp_var = np.random.randint(98, 102)
-		self.pulse_transit_var = np.random.randint(50, 55)
-		self.abnormal_var = condition_set[np.random.randint(0, 3)]
 
-		#pdb.set_trace()
-		self.heartbeat_label.configure(text = self.heartbeat_var)
-		self.SP02_label.configure(text = self.SP02_var)
-		self.temp_label.configure(text = self.temp_var)
-		self.pulse_transit_label.configure(text = self.pulse_transit_var)
-		self.abnormal_label.configure(text = self.abnormal_var)
+		# self.heartbeat_var = np.random.randint(40, 60)
+		# self.SP02_var = np.random.randint(20, 30)
+		# self.temp_var = np.random.randint(98, 102)
+		# self.pulse_transit_var = np.random.randint(50, 55)
+		# self.abnormal_var = condition_set[np.random.randint(0, 3)]
+
+		# self.heartbeat_label.configure(text = self.heartbeat_var)
+		# self.SP02_label.configure(text = self.SP02_var)
+		# self.temp_label.configure(text = self.temp_var)
+		# self.pulse_transit_label.configure(text = self.pulse_transit_var)
+		# self.abnormal_label.configure(text = self.abnormal_var)
 
 		if ((self.n % self.repeat_length) == 0):
 			lim1 = self.ecg_ax.set_xlim(self.n, self.n + self.repeat_length)
 			lim2 = self.ppg_ax.set_xlim(self.n, self.n + self.repeat_length)
-			lim3 = self.ecg_ax.set_ylim([np.amin(self.ecg_data[self.n:self.n+self.repeat_length]),np.amax(self.ecg_data[self.n:self.n+self.repeat_length])])
-			lim4 = self.ppg_ax.set_ylim([np.amin(self.ppg_data[self.n:self.n+self.repeat_length]),np.amax(self.ppg_data[self.n:self.n+self.repeat_length])])
+			#lim3 = self.ecg_ax.set_ylim([np.amin(self.ecg_data[self.n: self.n + self.repeat_length]), np.amax(self.ecg_data[self.n: self.n + self.repeat_length])])
+			#lim4 = self.ppg_ax.set_ylim([np.amin(self.ppg_data[self.n: self.n + self.repeat_length]), np.amax(self.ppg_data[self.n: self.n + self.repeat_length])])
+			lim3 = self.ecg_ax.set_ylim([-30, 30])
 			self.ecg_fig.canvas.draw()
 			self.ppg_fig.canvas.draw()
 
 		elif (self.n > self.repeat_length):
+
 
 			self.ecg_fig.canvas.restore_region(self.ecg_background)
 			self.ppg_fig.canvas.restore_region(self.ppg_background)
@@ -282,6 +289,43 @@ class heartbox_wave_viewer:
 			self.ecg_fig.canvas.blit(self.ecg_ax.bbox)
 			self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
 
+	#graph renderer for live data
+	def read_live_samples(self):
+		#while(~q.empty()):
+		filtered_sample = self.filt_data_gen_ppg()
+
+		if(filtered_sample != 'Q'):
+			self.ecg_data[self.n] = filtered_sample
+			self.update_viewer()
+			self.root.after(0, self.read_live_samples)
+			self.n = self.n + 1
+		else:
+			self.root.after(0, self.read_live_samples)
+
+
+	def filt_data_gen_ppg(self):
+		# check if new sample ready
+		if(~q.empty()):
+			sample = q.get()
+			#print sample
+		else:
+			return 'Q'
+
+		self.fifo_ppg = np.append(self.fifo_ppg[1:],sample)
+		self.numSamples_ppg = self.numSamples_ppg + 1
+
+		if(self.numSamples_ppg < filter_length):
+			return 0
+		else:
+			#import pdb; pdb.set_trace()
+			filteredArray = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,\
+				self.fifo_ppg[self.fifo_ppg.size - filter_length:])
+
+			filteredArray = signal.filtfilt(filterCoeffB_H,filterCoeffA_H,filteredArray)
+
+			return filteredArray[filter_length - 1]
+
+	#renders a single frame of plotting ECG/PPG data and biometrics	
 
 if __name__ == "__main__":
 	graph_viewer = heartbox_wave_viewer()
