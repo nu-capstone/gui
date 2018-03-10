@@ -296,7 +296,7 @@ class heartbox_wave_viewer:
 	def read_live_samples(self):
 		#while(~q.empty()):
 		filtered_ppg, filtered_ecg = self.dsp.filt_data_gen()
-		self.calc_heartrate()
+		self.heartbox_var = self.dsp.calc_heartrate()
 
 		if(filtered_ecg != 'Q'):
 			self.ppg_data = np.append(self.ppg_data, filtered_ppg)

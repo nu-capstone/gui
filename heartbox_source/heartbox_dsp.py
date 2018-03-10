@@ -22,7 +22,6 @@ class heartbox_DSP:
 		A = int(sample[42:50], 16)
 		B = int(sample[50:58], 16)
 
-
 		print A, B
 		self.fifo_ppg = np.append(self.fifo_ppg[1:],int(sample[26:34],16))
 		self.fifo_ecg = np.append(self.fifo_ecg[1:], A-B)
@@ -60,6 +59,6 @@ class heartbox_DSP:
 			#pdb.set_trace()
 			heartbeat_index = np.argmax(abs(hb_fft[low_bound: high_bound]))
 			#print heartbeat_index
-			self.heartbeat_var = int((heartbeat_index+low_bound) * sample_rate / self.fifo_ppg_length * 60)
+			return = int((heartbeat_index+low_bound) * sample_rate / self.fifo_ppg_length * 60)
 			#plt.show()
 			#print self.heartbeat_var
