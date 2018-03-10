@@ -20,9 +20,14 @@ UDP_IP = "192.168.56.1"
 UDP_PORT = 50007
 
 q = multiprocessing.Queue()
-filterCoeffB_H, filterCoeffA_H = signal.butter(5,.01,'highpass')
-filterCoeffB_ppg_L, filterCoeffA_ppg_L = signal.butter(5,.6,'lowpass')
+
+filterCoeffB_ppg_H, filterCoeffA_ppg_H = signal.butter(5,.0025,'highpass')
+filterCoeffB_ppg_L, filterCoeffA_ppg_L = signal.butter(5,.2,'lowpass')
+filterCoeffB_ecg_H, filterCoeffA_ecg_H = signal.butter(5,.005,'highpass')
+filterCoeffB_ecg_L, filterCoeffA_ecg_L = signal.butter(5,.3,'lowpass')
+
 filter_length = 20
+sample_rate = 50.0
 
 def simulation(q):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
@@ -31,13 +36,13 @@ def simulation(q):
 	while True:
 			#time.sleep(1)
 		data, addr = sock.recvfrom(100)
-		sample = int(data[10:18],16);
-		print data + '\n'
+		#sample = int(data[26:34],16);
+		#print data + '\n'
 		#time.sleep()
 		#sample = 0.00025
 		#print sample
 				#here send any data you want to send to the other process, can be any pickable object
-		q.put(sample)
+		q.put(data)
 	sock.close()
 	q.put('Q')
 
@@ -45,8 +50,11 @@ def simulation(q):
 class heartbox_wave_viewer:
 	def __init__(self):
 		self.root = tk.Tk()
-		self.numSamples_ppg = 0
-		self.fifo_ppg = np.zeros(21)
+		self.numSamples = 0
+		self.fifo_ppg_length = 1024
+		self.fifo_ecg_length = 1024
+		self.fifo_ecg = np.zeros(self.fifo_ppg_length)
+		self.fifo_ppg = np.zeros(self.fifo_ppg_length)
 
 		self.root.title('HeartBox Wavetool')
 		self.root.minsize(width=900, height = 700)
@@ -71,8 +79,8 @@ class heartbox_wave_viewer:
 	#setup elements needed for plots
 	def setup_plots(self):
 		if (isComm):
-			self.ecg_data = np.zeros(10000)
-			self.ppg_data = np.zeros(10000)
+			self.ecg_data = np.array([])
+			self.ppg_data = np.array([])
 		else:
 			self.ecg_data = np.genfromtxt('ecg.csv', delimiter = ',')
 			self.ppg_data = np.genfromtxt('ppg.csv', delimiter = ',')
@@ -95,18 +103,26 @@ class heartbox_wave_viewer:
 		self.ppg_ax.set_facecolor('black')
 
 		#set up viewing window (in this case the 25 most recent values)
-		self.repeat_length = (np.shape(self.ecg_data)[0]+1)/10
-		self.repeat_length = 500
+		#self.repeat_length = (np.shape(self.ecg_data)[0]+1)/10
+		self.repeat_length = 250
 		self.ecg_ax.set_xlim([0,self.repeat_length])
 		self.ppg_ax.set_xlim([0,self.repeat_length])
 
-		self.ecg_ax.set_ylim([np.amin(self.ecg_data),np.amax(self.ecg_data)])
-		self.ppg_ax.set_ylim([np.amin(self.ppg_data),np.amax(self.ppg_data)])
+		self.ecg_ax.set_ylim([-1,1])
+		self.ppg_ax.set_ylim([-1,1])
 
 		self.ecg_im, = self.ecg_ax.plot([], [], color=(0,0,1))
 		self.ppg_im, = self.ppg_ax.plot([], [], color=(1,0,1))
 
 		self.n = 0
+		self.ppg_max = 1
+		self.ppg_min = -1
+		self.ecg_max = 1
+		self.ecg_min = -1
+		self.ppg_start_graph_index = 0
+		self.ecg_start_graph_index = 0
+
+
 		self.ecg_background = self.ecg_fig.canvas.copy_from_bbox(self.ecg_ax.bbox)
 		self.ppg_background = self.ppg_fig.canvas.copy_from_bbox(self.ppg_ax.bbox)
 
@@ -231,79 +247,122 @@ class heartbox_wave_viewer:
 
 	def update_viewer(self):
 		#uses stored data for waveforms
-		self.ecg_im.set_xdata(np.arange(self.n))
-		self.ecg_im.set_ydata(self.ecg_data[0: self.n])
-		self.ppg_im.set_xdata(np.arange(self.n))
-		self.ppg_im.set_ydata(self.ppg_data[0: self.n])
+		self.ecg_im.set_xdata(np.arange(self.ecg_start_graph_index, self.n))
+		self.ecg_im.set_ydata(self.ecg_data[self.ecg_start_graph_index: self.n])
+		self.ppg_im.set_xdata(np.arange(self.ecg_start_graph_index, self.n))
+		self.ppg_im.set_ydata(self.ppg_data[self.ppg_start_graph_index: self.n])
 		
 
-		# self.heartbeat_var = np.random.randint(40, 60)
+		#self.heartbeat_var = np.random.randint(40, 60)
 		# self.SP02_var = np.random.randint(20, 30)
 		# self.temp_var = np.random.randint(98, 102)
 		# self.pulse_transit_var = np.random.randint(50, 55)
 		# self.abnormal_var = condition_set[np.random.randint(0, 3)]
 
-		# self.heartbeat_label.configure(text = self.heartbeat_var)
+		self.heartbeat_label.configure(text = self.heartbeat_var)
 		# self.SP02_label.configure(text = self.SP02_var)
 		# self.temp_label.configure(text = self.temp_var)
 		# self.pulse_transit_label.configure(text = self.pulse_transit_var)
 		# self.abnormal_label.configure(text = self.abnormal_var)
 
 		if ((self.n % self.repeat_length) == 0):
-			lim1 = self.ecg_ax.set_xlim(self.n, self.n + self.repeat_length)
-			lim2 = self.ppg_ax.set_xlim(self.n, self.n + self.repeat_length)
+
+			self.ppg_start_graph_index = self.n 
+			self.ecg_start_graph_index = self.n
+
+			limX1 = self.ecg_ax.set_xlim(self.n, self.n + self.repeat_length)
+			limX2 = self.ppg_ax.set_xlim(self.n, self.n + self.repeat_length)
 			#lim3 = self.ecg_ax.set_ylim([np.amin(self.ecg_data[self.n: self.n + self.repeat_length]), np.amax(self.ecg_data[self.n: self.n + self.repeat_length])])
 			#lim4 = self.ppg_ax.set_ylim([np.amin(self.ppg_data[self.n: self.n + self.repeat_length]), np.amax(self.ppg_data[self.n: self.n + self.repeat_length])])
-			lim3 = self.ecg_ax.set_ylim([-30, 30])
+			
+			self.ecg_max = 3
+			self.ecg_min = -3
+			self.ppg_max = 3
+			self.ppg_min = -3
+
+			if(self.ecg_data[self.n] > self.ecg_max):
+				self.ecg_max = 2*self.ecg_data[self.n]
+			elif(self.ecg_data[self.n] < self.ecg_min):
+				self.ecg_min = 2*self.ecg_data[self.n]
+
+			if(self.ppg_data[self.n] > self.ppg_max):
+				self.ppg_max = 2*self.ppg_data[self.n]
+			elif(self.ppg_data[self.n] < self.ppg_min):
+				self.ppg_min = 2*self.ppg_data[self.n]
+
+			limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
+			limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
+
 			self.ecg_fig.canvas.draw()
 			self.ppg_fig.canvas.draw()
 
-		elif (self.n > self.repeat_length):
-
-
-			self.ecg_fig.canvas.restore_region(self.ecg_background)
-			self.ppg_fig.canvas.restore_region(self.ppg_background)
-
-			self.ecg_ax.draw_artist(self.ecg_im)
-			self.ppg_ax.draw_artist(self.ppg_im)
-
-			self.ecg_fig.canvas.blit(self.ecg_ax.bbox)
-			self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
-
 		else:
-			# makes it look ok when the animation loops
-			#pdb.set_trace()
-			lim1 = self.ecg_ax.set_xlim(0, self.repeat_length)
-			lim2 = self.ppg_ax.set_xlim(0, self.repeat_length)
-			lim3 = self.ecg_ax.set_ylim([np.amin(self.ecg_data[0: self.repeat_length]),
-			 np.amax(self.ecg_data[0: self.repeat_length])])
-			lim4 = self.ppg_ax.set_ylim([np.amin(self.ppg_data[0: self.repeat_length]),
-			 np.amax(self.ppg_data[0: self.repeat_length])])
+			if(self.ecg_data[self.n] > self.ecg_max):
+				self.ecg_max = 2*self.ecg_data[self.n]
+				limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
+				self.ecg_fig.canvas.draw()
 
-			self.ecg_fig.canvas.restore_region(self.ecg_background)
-			self.ppg_fig.canvas.restore_region(self.ppg_background)
+			elif(self.ecg_data[self.n] < self.ecg_min):
+				self.ecg_min = 2*self.ecg_data[self.n]
+				limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
+				self.ecg_fig.canvas.draw()
 
-			self.ecg_ax.draw_artist(self.ecg_im)
-			self.ppg_ax.draw_artist(self.ppg_im)
+			else:
+				self.ecg_fig.canvas.restore_region(self.ecg_background)
+				self.ecg_ax.draw_artist(self.ecg_im)
+				self.ecg_fig.canvas.blit(self.ecg_ax.bbox)
 
-			self.ecg_fig.canvas.blit(self.ecg_ax.bbox)
-			self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
+			if(self.ppg_data[self.n] > self.ppg_max):
+				self.ppg_max = 2*self.ppg_data[self.n]
+				limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
+				self.ppg_fig.canvas.draw()
+
+			elif(self.ppg_data[self.n] < self.ppg_min):
+				self.ppg_min = 2*self.ppg_data[self.n]
+				limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
+				self.ppg_fig.canvas.draw()
+
+			else:
+				self.ppg_fig.canvas.restore_region(self.ppg_background)
+				self.ppg_ax.draw_artist(self.ppg_im)
+				self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
+
+		# else:
+		# 	# makes it look ok when the animation loops
+		# 	lim1 = self.ecg_ax.set_xlim(0, self.repeat_length)
+		# 	lim2 = self.ppg_ax.set_xlim(0, self.repeat_length)
+		# 	lim3 = self.ecg_ax.set_ylim([np.amin(self.ecg_data[0: self.repeat_length]),
+		# 	 np.amax(self.ecg_data[0: self.repeat_length])])
+		# 	lim4 = self.ppg_ax.set_ylim([np.amin(self.ppg_data[0: self.repeat_length]),
+		# 	 np.amax(self.ppg_data[0: self.repeat_length])])
+
+		# 	self.ecg_fig.canvas.restore_region(self.ecg_background)
+		# 	self.ppg_fig.canvas.restore_region(self.ppg_background)
+
+		# 	self.ecg_ax.draw_artist(self.ecg_im)
+		# 	self.ppg_ax.draw_artist(self.ppg_im)
+
+		# 	self.ecg_fig.canvas.blit(self.ecg_ax.bbox)
+		# 	self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
 
 	#graph renderer for live data
 	def read_live_samples(self):
 		#while(~q.empty()):
-		filtered_sample = self.filt_data_gen_ppg()
+		filtered_ppg, filtered_ecg = self.filt_data_gen()
+		self.calc_heartrate()
 
-		if(filtered_sample != 'Q'):
-			self.ecg_data[self.n] = filtered_sample
+		if(filtered_ecg != 'Q'):
+			self.ppg_data = np.append(self.ppg_data, filtered_ppg)
+			self.ecg_data = np.append(self.ecg_data, filtered_ecg)
+
+			#print self.ppg_data[self.n]
 			self.update_viewer()
 			self.root.after(0, self.read_live_samples)
 			self.n = self.n + 1
 		else:
 			self.root.after(0, self.read_live_samples)
 
-
-	def filt_data_gen_ppg(self):
+	def filt_data_gen(self):
 		# check if new sample ready
 		if(~q.empty()):
 			sample = q.get()
@@ -311,19 +370,51 @@ class heartbox_wave_viewer:
 		else:
 			return 'Q'
 
-		self.fifo_ppg = np.append(self.fifo_ppg[1:],sample)
-		self.numSamples_ppg = self.numSamples_ppg + 1
+		A = int(sample[42:50], 16)
+		B = int(sample[50:58], 16)
 
-		if(self.numSamples_ppg < filter_length):
-			return 0
+
+		print A, B
+		self.fifo_ppg = np.append(self.fifo_ppg[1:],int(sample[26:34],16))
+		self.fifo_ecg = np.append(self.fifo_ecg[1:], A-B)
+
+		self.numSamples = self.numSamples + 1
+
+		if(self.numSamples < filter_length):
+			return 0, 0
 		else:
 			#import pdb; pdb.set_trace()
-			filteredArray = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,\
+			filtered_ppg = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,\
 				self.fifo_ppg[self.fifo_ppg.size - filter_length:])
 
-			filteredArray = signal.filtfilt(filterCoeffB_H,filterCoeffA_H,filteredArray)
+			filtered_ppg = signal.filtfilt(filterCoeffB_ppg_H,filterCoeffA_ppg_H,filtered_ppg)
 
-			return filteredArray[filter_length - 1]
+			moving_ppg_avg = np.sum(filtered_ppg)
+
+
+			filtered_ecg = signal.filtfilt(filterCoeffB_ecg_L,filterCoeffA_ecg_L,\
+				self.fifo_ecg[self.fifo_ecg.size - filter_length:])
+			#filtered_ecg = signal.filtfilt(filterCoeffB_ecg_H,filterCoeffA_ecg_H,filtered_ecg)
+			#moving_ecg_avg = np.sum(filtered_ecg)
+
+			return moving_ppg_avg, filtered_ecg[filter_length-1]
+			#return filteredArray[filter_length - 1]
+
+	def calc_heartrate(self):
+		if(self.numSamples%(5*sample_rate)==0 and self.numSamples > 1000):
+			hb_fft = np.fft.fft(self.fifo_ppg)
+			#pdb.set_trace()
+			#plt.figure()
+			#plt.plot(abs(hb_fft))
+			low_bound = int (np.floor(.5/(sample_rate/self.fifo_ppg_length)))
+			high_bound = int (np.floor(3/(sample_rate/self.fifo_ppg_length)))
+			#pdb.set_trace()
+			heartbeat_index = np.argmax(abs(hb_fft[low_bound: high_bound]))
+			#print heartbeat_index
+			self.heartbeat_var = int((heartbeat_index+low_bound) * sample_rate / self.fifo_ppg_length * 60)
+			#plt.show()
+			#print self.heartbeat_var
+
 
 	#renders a single frame of plotting ECG/PPG data and biometrics	
 
