@@ -1,60 +1,27 @@
+import Tkinter as tk 
+from PIL import Image, ImageTk
+import tkFont
+
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pylab as plt
 import matplotlib.animation as animation
 import matplotlib
+
 import numpy as np
-from numpy import arange, sin, pi
-import Tkinter as tk 
-from PIL import Image, ImageTk
-import tkFont
-import pdb
 from scipy import signal
+
 import multiprocessing
 import socket
 import time
+import settings
 
-condition_set = ('Normal', 'Warning', 'Critical')
-deg =  u"\u00b0"
-isComm = 1
-UDP_IP = "192.168.56.1"
-UDP_PORT = 50007
+from heartbox_dsp import heartbox_dsp
 
-q = multiprocessing.Queue()
-
-filterCoeffB_ppg_H, filterCoeffA_ppg_H = signal.butter(5,.0025,'highpass')
-filterCoeffB_ppg_L, filterCoeffA_ppg_L = signal.butter(5,.2,'lowpass')
-filterCoeffB_ecg_H, filterCoeffA_ecg_H = signal.butter(5,.005,'highpass')
-filterCoeffB_ecg_L, filterCoeffA_ecg_L = signal.butter(5,.3,'lowpass')
-
-filter_length = 20
-sample_rate = 50.0
-
-def simulation(q):
-	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
-	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	sock.bind((UDP_IP, UDP_PORT))
-	while True:
-			#time.sleep(1)
-		data, addr = sock.recvfrom(100)
-		#sample = int(data[26:34],16);
-		#print data + '\n'
-		#time.sleep()
-		#sample = 0.00025
-		#print sample
-				#here send any data you want to send to the other process, can be any pickable object
-		q.put(data)
-	sock.close()
-	q.put('Q')
-
-
+#displays waveform/metric monitor to be viewed by users
 class heartbox_wave_viewer:
 	def __init__(self):
 		self.root = tk.Tk()
-		self.numSamples = 0
-		self.fifo_ppg_length = 1024
-		self.fifo_ecg_length = 1024
-		self.fifo_ecg = np.zeros(self.fifo_ppg_length)
-		self.fifo_ppg = np.zeros(self.fifo_ppg_length)
+		self.dsp = heartbox_dsp.heartbox_dsp()
 
 		self.root.title('HeartBox Wavetool')
 		self.root.minsize(width=900, height = 700)
@@ -64,12 +31,9 @@ class heartbox_wave_viewer:
 
 	def startup(self):
 
-		#Create and start the simulation process
-
-		#pdb.set_trace()
 		#for offline viewing, reads data from csv
 		if (isComm):
-			self.simulate=multiprocessing.Process(None,simulation,args=(q,))
+			self.simulate=multiprocessing.Process(None,heartbox_uart,args=(q,))
 			self.simulate.start()
 			#pdb.set_trace()
 			self.read_live_samples()
@@ -327,28 +291,11 @@ class heartbox_wave_viewer:
 				self.ppg_ax.draw_artist(self.ppg_im)
 				self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
 
-		# else:
-		# 	# makes it look ok when the animation loops
-		# 	lim1 = self.ecg_ax.set_xlim(0, self.repeat_length)
-		# 	lim2 = self.ppg_ax.set_xlim(0, self.repeat_length)
-		# 	lim3 = self.ecg_ax.set_ylim([np.amin(self.ecg_data[0: self.repeat_length]),
-		# 	 np.amax(self.ecg_data[0: self.repeat_length])])
-		# 	lim4 = self.ppg_ax.set_ylim([np.amin(self.ppg_data[0: self.repeat_length]),
-		# 	 np.amax(self.ppg_data[0: self.repeat_length])])
-
-		# 	self.ecg_fig.canvas.restore_region(self.ecg_background)
-		# 	self.ppg_fig.canvas.restore_region(self.ppg_background)
-
-		# 	self.ecg_ax.draw_artist(self.ecg_im)
-		# 	self.ppg_ax.draw_artist(self.ppg_im)
-
-		# 	self.ecg_fig.canvas.blit(self.ecg_ax.bbox)
-		# 	self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
 
 	#graph renderer for live data
 	def read_live_samples(self):
 		#while(~q.empty()):
-		filtered_ppg, filtered_ecg = self.filt_data_gen()
+		filtered_ppg, filtered_ecg = self.dsp.filt_data_gen()
 		self.calc_heartrate()
 
 		if(filtered_ecg != 'Q'):
@@ -361,59 +308,6 @@ class heartbox_wave_viewer:
 			self.n = self.n + 1
 		else:
 			self.root.after(0, self.read_live_samples)
-
-	def filt_data_gen(self):
-		# check if new sample ready
-		if(~q.empty()):
-			sample = q.get()
-			#print sample
-		else:
-			return 'Q'
-
-		A = int(sample[42:50], 16)
-		B = int(sample[50:58], 16)
-
-
-		print A, B
-		self.fifo_ppg = np.append(self.fifo_ppg[1:],int(sample[26:34],16))
-		self.fifo_ecg = np.append(self.fifo_ecg[1:], A-B)
-
-		self.numSamples = self.numSamples + 1
-
-		if(self.numSamples < filter_length):
-			return 0, 0
-		else:
-			#import pdb; pdb.set_trace()
-			filtered_ppg = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,\
-				self.fifo_ppg[self.fifo_ppg.size - filter_length:])
-
-			filtered_ppg = signal.filtfilt(filterCoeffB_ppg_H,filterCoeffA_ppg_H,filtered_ppg)
-
-			moving_ppg_avg = np.sum(filtered_ppg)
-
-
-			filtered_ecg = signal.filtfilt(filterCoeffB_ecg_L,filterCoeffA_ecg_L,\
-				self.fifo_ecg[self.fifo_ecg.size - filter_length:])
-			#filtered_ecg = signal.filtfilt(filterCoeffB_ecg_H,filterCoeffA_ecg_H,filtered_ecg)
-			#moving_ecg_avg = np.sum(filtered_ecg)
-
-			return moving_ppg_avg, filtered_ecg[filter_length-1]
-			#return filteredArray[filter_length - 1]
-
-	def calc_heartrate(self):
-		if(self.numSamples%(5*sample_rate)==0 and self.numSamples > 1000):
-			hb_fft = np.fft.fft(self.fifo_ppg)
-			#pdb.set_trace()
-			#plt.figure()
-			#plt.plot(abs(hb_fft))
-			low_bound = int (np.floor(.5/(sample_rate/self.fifo_ppg_length)))
-			high_bound = int (np.floor(3/(sample_rate/self.fifo_ppg_length)))
-			#pdb.set_trace()
-			heartbeat_index = np.argmax(abs(hb_fft[low_bound: high_bound]))
-			#print heartbeat_index
-			self.heartbeat_var = int((heartbeat_index+low_bound) * sample_rate / self.fifo_ppg_length * 60)
-			#plt.show()
-			#print self.heartbeat_var
 
 
 	#renders a single frame of plotting ECG/PPG data and biometrics	
