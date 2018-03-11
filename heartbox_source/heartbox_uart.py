@@ -12,6 +12,6 @@ def heartbox_uart(q):
     	#ser.write(b'r a')
     	#print(s)
 
-		q.put(data)
-	sock.close()
-	q.put('Q')
+		settings.q.put(data)
+	ser.close()
+	settings.q.put('Q')

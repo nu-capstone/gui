@@ -3,7 +3,7 @@ import numpy as np
 import settings
 
 
-class heartbox_DSP:
+class heartbox_dsp:
 	def __init__(self):
 		self.numSamples = 0
 		self.fifo_ppg_length = 1024
@@ -59,6 +59,6 @@ class heartbox_DSP:
 			#pdb.set_trace()
 			heartbeat_index = np.argmax(abs(hb_fft[low_bound: high_bound]))
 			#print heartbeat_index
-			return = int((heartbeat_index+low_bound) * sample_rate / self.fifo_ppg_length * 60)
+			return int((heartbeat_index+low_bound) * sample_rate / self.fifo_ppg_length * 60)
 			#plt.show()
 			#print self.heartbeat_var

@@ -13,15 +13,16 @@ from scipy import signal
 import multiprocessing
 import socket
 import time
+
 import settings
-
 from heartbox_dsp import heartbox_dsp
-
+import heartbox_uart
 #displays waveform/metric monitor to be viewed by users
+
 class heartbox_wave_viewer:
 	def __init__(self):
 		self.root = tk.Tk()
-		self.dsp = heartbox_dsp.heartbox_dsp()
+		self.dsp = heartbox_dsp()
 
 		self.root.title('HeartBox Wavetool')
 		self.root.minsize(width=900, height = 700)
@@ -32,7 +33,7 @@ class heartbox_wave_viewer:
 	def startup(self):
 
 		#for offline viewing, reads data from csv
-		if (isComm):
+		if (settings.isComm):
 			self.simulate=multiprocessing.Process(None,heartbox_uart,args=(q,))
 			self.simulate.start()
 			#pdb.set_trace()
@@ -42,7 +43,7 @@ class heartbox_wave_viewer:
 
 	#setup elements needed for plots
 	def setup_plots(self):
-		if (isComm):
+		if (settings.isComm):
 			self.ecg_data = np.array([])
 			self.ppg_data = np.array([])
 		else:
@@ -103,7 +104,7 @@ class heartbox_wave_viewer:
 		self.SP02_var = np.random.randint(20, 30)
 		self.temp_var = np.random.randint(98, 102)
 		self.pulse_transit_var = np.random.randint(50, 55)
-		self.abnormal_var = condition_set[np.random.randint(0, 3)]
+		self.abnormal_var = settings.condition_set[np.random.randint(0, 3)]
 
 
 		self.text_monitor_frame = tk.LabelFrame(self.root, bd = 3, 
@@ -148,7 +149,7 @@ class heartbox_wave_viewer:
 		 anchor ="w", width = 40)
 		self.SP02_text = tk.Label(self.SP02_frame, text = "SpO2  %", 
 			anchor ="w", width = 40)
-		self.temp_text = tk.Label(self.temp_frame, text = "TEMP  " + deg + "F",
+		self.temp_text = tk.Label(self.temp_frame, text = "TEMP  " + settings.deg + "F",
 		 anchor ="w", width = 40)
 		self.pulse_transit_text = tk.Label(self.pulse_transit_frame, text = "PULSE TRANSIT TIME  MS", 
 			anchor ="w", width = 40)
