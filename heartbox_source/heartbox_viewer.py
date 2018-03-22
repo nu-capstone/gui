@@ -9,6 +9,7 @@ import matplotlib
 
 import numpy as np
 from scipy import signal
+import pdb
 
 import multiprocessing
 import socket
@@ -21,20 +22,41 @@ import heartbox_uart
 
 class heartbox_wave_viewer:
 	def __init__(self):
+		#self.root_x = tk.Tk()
+		#self.root = tk.Toplevel()
 		self.root = tk.Tk()
 		self.dsp = heartbox_dsp()
+		self.screen_width = self.root.winfo_screenwidth()
+		self.screen_height = self.root.winfo_screenheight()
+		self.curr_screen_width = 1200
+		self.curr_screen_height = 700
 
+		self.root.attributes("-toolwindow",1) 
+		self.root.configure(bg = settings.back_color)
 		self.root.title('HeartBox Wavetool')
-		self.root.minsize(width=900, height = 700)
+
+		self.root.minsize(width = self.curr_screen_width, height = self.curr_screen_height)
+		#self.root.attributes("-zoomed", True)
+		self.root.resizable(False, False)
+		self.fullscreen_state = False
+
+		self.vitals_title_font = tkFont.Font(family = 'Consolas', size = 15)
+		self.vitals_subtitle_font = tkFont.Font(family = 'Consolas', size = 15)
+		self.vitals_menubar_font = tkFont.Font(family = 'Consolas', size = 10)
+		self.vitals_text_font = tkFont.Font(family = 'Consolas', size = 60)
+
 		self.setup_plots()
-		self.viewer_layout()
-		self.startup()
+		self.bind_shortcuts()
+		self.menu_layout()
+		self.graph_layout()
+		self.vitals_layout()
+		#self.startup()
+
 
 	def startup(self):
-
 		#for offline viewing, reads data from csv
 		if (settings.isComm):
-			self.simulate=multiprocessing.Process(None,heartbox_uart,args=(q,))
+			self.simulate=multiprocessing.Process(None,heartbox_uart,args=(settings.q,))
 			self.simulate.start()
 			#pdb.set_trace()
 			self.read_live_samples()
@@ -53,23 +75,41 @@ class heartbox_wave_viewer:
 		#setup figure
 		self.ecg_fig = plt.figure()
 		self.ppg_fig = plt.figure()
-		self.ecg_fig.set_size_inches(6,3.5)
-		self.ppg_fig.set_size_inches(6,3.5)
+		self.ecg_fig.set_size_inches(8,3.5)
+		self.ppg_fig.set_size_inches(8,3.5)
 		self.ecg_ax = self.ecg_fig.add_subplot(1,1,1)
 		self.ppg_ax = self.ppg_fig.add_subplot(1,1,1)
+		self.ecg_ax.locator_params(axis='y', nbins =2)
+		self.ecg_ax.locator_params(axis='x', nbins =2)
+		self.ppg_ax.locator_params(axis='y', nbins =2)
+		self.ppg_ax.locator_params(axis='x', nbins =2)
 
-		self.ecg_ax.set_frame_on(False)
-		self.ppg_ax.set_frame_on(False)
+		self.ppg_ax = self.ppg_fig.add_subplot(1,1,1)
 
-		self.ecg_ax.grid(color = '#add8e6', linestyle='--')
-		self.ppg_ax.grid(color = '#add8e6', linestyle='--', )
+		self.ecg_fig.set_facecolor(settings.back_color)
+		self.ppg_fig.set_facecolor(settings.back_color)
+		#self.ecg_ax.set_frame_on(False)
+		#self.ppg_ax.set_frame_on(False)
 
-		self.ecg_ax.set_facecolor('black')
-		self.ppg_ax.set_facecolor('black')
+		self.ecg_ax.set_facecolor(settings.back_color)
+		self.ppg_ax.set_facecolor(settings.back_color)
+
+		self.ecg_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
+		self.ppg_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
+
+
+		self.ecg_ax.xaxis.label.set_color(settings.grid_color)
+		self.ecg_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
+		self.ecg_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
+
+
+		self.ppg_ax.xaxis.label.set_color(settings.grid_color)
+		self.ppg_ax.tick_params(axis='x', colors=settings.grid_color)
+		self.ppg_ax.tick_params(axis='y', colors=settings.grid_color)
 
 		#set up viewing window (in this case the 25 most recent values)
 		#self.repeat_length = (np.shape(self.ecg_data)[0]+1)/10
-		self.repeat_length = 250
+		self.repeat_length = 500
 		self.ecg_ax.set_xlim([0,self.repeat_length])
 		self.ppg_ax.set_xlim([0,self.repeat_length])
 
@@ -87,13 +127,115 @@ class heartbox_wave_viewer:
 		self.ppg_start_graph_index = 0
 		self.ecg_start_graph_index = 0
 
-
 		self.ecg_background = self.ecg_fig.canvas.copy_from_bbox(self.ecg_ax.bbox)
 		self.ppg_background = self.ppg_fig.canvas.copy_from_bbox(self.ppg_ax.bbox)
 
-	#establishes basic layout of GUI elements
-	def viewer_layout(self):
+	#defines internal layout of menubar
+	def menu_layout(self):
+		self.root.iconbitmap(default=settings.ICON_PATH)
 
+		self.menu_frame = tk.Frame(self.root, bg = settings.back_color, highlightbackground = settings.grid_color)
+		self.menu_frame.grid(row = 0, column = 0, columnspan = 1)
+
+		self.file_button = tk.Menubutton(self.menu_frame, text="FILE", font = self.vitals_menubar_font,
+			fg= settings.font_color, bg = settings.back_color)
+		self.view_button = tk.Menubutton(self.menu_frame, text="VIEW", font = self.vitals_menubar_font,
+			fg= settings.font_color, bg = settings.back_color) 
+		self.tools_button = tk.Menubutton(self.menu_frame, text="TOOLS", font = self.vitals_menubar_font,
+			fg= settings.font_color, bg = settings.back_color) 
+		self.help_button = tk.Menubutton(self.menu_frame, text="HELP", font = self.vitals_menubar_font,
+			fg= settings.font_color, bg = settings.back_color) 
+		self.label = tk.Label(self.menu_frame, text="                                                          ", font = self.vitals_menubar_font,
+			 fg=settings.font_color, bg = settings.back_color)
+
+		self.file_button.grid(row = 0, column = 0)
+		self.view_button.grid(row = 0, column = 1)
+		self.tools_button.grid(row = 0, column = 2)
+		self.help_button.grid(row = 0, column = 3)
+		self.label.grid(row = 0, column = 4)
+		self.menu_frame.columnconfigure(0, weight = 0) 
+		self.menu_frame.columnconfigure(1, weight = 0)
+		self.menu_frame.columnconfigure(2, weight = 0)
+		self.menu_frame.columnconfigure(3, weight = 0)
+		self.menu_frame.columnconfigure(4, weight = 100)
+
+		self.file_button.menu= tk.Menu(self.file_button, tearoff = 0,
+		 background = settings.back_color, fg= settings.font_color, font = self.vitals_menubar_font)
+		self.file_button['menu'] = self.file_button.menu
+		self.file_button.menu.add_command(label="Connect", )
+		self.file_button.menu.add_command(label="Disconnect Ctrl+D")
+		self.file_button.menu.add_separator()
+		self.file_button.menu.add_command(label="Register Dump")
+		self.file_button.menu.add_separator()
+		self.file_button.menu.add_command(label="Load Cfg Ctrl+L")
+		self.file_button.menu.add_command(label="Save Cfg Ctrl+S")
+		self.file_button.menu.add_command(label="Apply Config")
+		self.file_button.menu.add_separator()
+		self.file_button.menu.add_command(label="Exit")
+
+		self.view_button.menu= tk.Menu(self.view_button, tearoff = 0, 
+			background = settings.back_color, fg= settings.font_color, font =self.vitals_menubar_font)
+		self.view_button['menu'] = self.view_button.menu
+		self.view_button.menu.add_command(label="Option 1")
+		self.view_button.menu.add_command(label="Option 2")
+		self.view_button.menu.add_separator()
+		self.view_button.menu.add_command(label="Option 3")
+		self.view_button.menu.add_separator()
+		self.view_button.menu.add_command(label="Option 4")
+		self.view_button.menu.add_command(label="Option 5")
+		self.view_button.menu.add_command(label="Option 6")
+		self.view_button.menu.add_separator()
+		self.view_button.menu.add_command(label="Option 7")
+
+		self.tools_button.menu= tk.Menu(self.tools_button, tearoff = 0,
+		 background = settings.back_color, fg= settings.font_color, font = self.vitals_menubar_font)
+		self.tools_button['menu'] = self.tools_button.menu
+		self.tools_button.menu.add_command(label="Option 1")
+		self.tools_button.menu.add_command(label="Option 2")
+		self.tools_button.menu.add_separator()
+		self.tools_button.menu.add_command(label="Option 3")
+		self.tools_button.menu.add_separator()
+		self.tools_button.menu.add_command(label="Option 4")
+		self.tools_button.menu.add_command(label="Option 5")
+		self.tools_button.menu.add_command(label="Option 6")
+		self.tools_button.menu.add_separator()
+		self.tools_button.menu.add_command(label="Option 7")
+
+		self.help_button.menu= tk.Menu(self.help_button, tearoff = 0, 
+			background = settings.back_color, fg= settings.font_color, font = self.vitals_menubar_font)
+		self.help_button['menu'] = self.help_button.menu
+		self.help_button.menu.add_command(label="Option 1")
+		self.help_button.menu.add_command(label="Option 2")
+		self.help_button.menu.add_separator()
+		self.help_button.menu.add_command(label="Option 3")
+		self.help_button.menu.add_separator()
+		self.help_button.menu.add_command(label="Option 4")
+		self.help_button.menu.add_command(label="Option 5")
+		self.help_button.menu.add_command(label="Option 6")
+		self.help_button.menu.add_separator()
+		self.help_button.menu.add_command(label="Option 7")
+
+	#defines internal layout of graph 
+	def graph_layout(self):
+		self.all_graph_frame = tk.Frame(self.root, bg = settings.back_color)
+		self.all_graph_frame.grid(column = 0, row = 1)
+
+		self.ecg_graph_frame = tk.LabelFrame(self.all_graph_frame, bd = 1, text = "ECG",
+			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
+		self.ecg_graph_frame.grid(column = 0, row = 0)
+		self.ecg_canvas = FigureCanvasTkAgg(self.ecg_fig, master=self.ecg_graph_frame)
+		self.ecg_canvas.show()
+		self.ecg_canvas.get_tk_widget().grid(column=0,row=0)
+
+		self.ppg_graph_frame = tk.LabelFrame(self.all_graph_frame, bd = 1, text = "PPG",
+			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
+		self.ppg_graph_frame.grid(column = 0, row = 1)
+		self.ppg_canvas = FigureCanvasTkAgg(self.ppg_fig, master=self.ppg_graph_frame)
+		self.ppg_canvas.show()
+		self.ppg_canvas.get_tk_widget().grid(column=0,row=0)
+	
+	#defines internal layout of vitals
+	def vitals_layout(self):
 		self.heartbeat_var = tk.IntVar()
 		self.SP02_var = tk.IntVar()
 		self.temp_var = tk.IntVar()
@@ -106,23 +248,25 @@ class heartbox_wave_viewer:
 		self.pulse_transit_var = np.random.randint(50, 55)
 		self.abnormal_var = settings.condition_set[np.random.randint(0, 3)]
 
+		self.root.columnconfigure(0, weight = 1)
+		self.root.columnconfigure(1, weight = 0)
 
-		self.text_monitor_frame = tk.LabelFrame(self.root, bd = 3, 
-			text = "Vitals", font = 8, padx = 5)
+		self.text_monitor_frame = tk.LabelFrame(self.root, bd = 1, font = self.vitals_title_font,
+			text = "VITALS", padx = 5, fg= settings.font_color, bg = settings.back_color)
 		self.text_monitor_frame.grid(column = 1, row = 1, rowspan = 2, padx = 10)
 		self.text_monitor_frame.rowconfigure(1, weight = 1)
 		self.text_monitor_frame.rowconfigure(2, weight = 1)
 
-		self.heartbeat_frame = tk.Frame(self.text_monitor_frame, bd = 1, 
-			relief="raised", width = 500)
-		self.SP02_frame = tk.Frame(self.text_monitor_frame, bd = 1, 
-			relief="raised", width = 500)
-		self.temp_frame = tk.Frame(self.text_monitor_frame, bd = 1,
-		 relief="raised", width = 500)
-		self.pulse_transit_frame = tk.Frame(self.text_monitor_frame, bd = 1,
-		 relief="raised", width = 500)
-		self.abnormal_frame = tk.Frame(self.text_monitor_frame, bd = 1,
-		 relief="raised", width = 500)
+		self.heartbeat_frame = tk.Frame(self.text_monitor_frame, bd = 0.5, 
+			relief="groove", width = 500, bg = settings.back_color)
+		self.SP02_frame = tk.Frame(self.text_monitor_frame, bd = 0.5, 
+			relief="groove", width = 500, bg = settings.back_color)
+		self.temp_frame = tk.Frame(self.text_monitor_frame, bd = 0.5,
+		 relief="groove", width = 500, bg = settings.back_color)
+		self.pulse_transit_frame = tk.Frame(self.text_monitor_frame, bd = 0.5,
+		 relief="groove", width = 500, bg = settings.back_color)
+		self.abnormal_frame = tk.Frame(self.text_monitor_frame, bd = 0.5,
+		 relief="groove", width = 500, bg = settings.back_color)
 
 		self.heartbeat_frame.columnconfigure(0, weight = 1)
 		self.heartbeat_frame.columnconfigure(1, weight = 1)
@@ -145,45 +289,33 @@ class heartbox_wave_viewer:
 		self.pulse_transit_frame.grid(row = 3, column = 0)
 		self.abnormal_frame.grid(row = 4, column = 0)
 
-		self.heartbeat_text = tk.Label(self.heartbeat_frame, text = "ECG  HR",
-		 anchor ="w", width = 40)
-		self.SP02_text = tk.Label(self.SP02_frame, text = "SpO2  %", 
-			anchor ="w", width = 40)
-		self.temp_text = tk.Label(self.temp_frame, text = "TEMP  " + settings.deg + "F",
-		 anchor ="w", width = 40)
-		self.pulse_transit_text = tk.Label(self.pulse_transit_frame, text = "PULSE TRANSIT TIME  MS", 
-			anchor ="w", width = 40)
-		self.abnormal_text = tk.Label(self.abnormal_frame, text = "ABNORMAL HB", 
-			anchor ="w", width = 40)
+		self.heartbeat_text = tk.Label(self.heartbeat_frame, text = "ECG HR", font = self.vitals_subtitle_font,
+			anchor ="w", width = 35, fg=settings.font_color, bg = settings.back_color)
+		self.SP02_text = tk.Label(self.SP02_frame, text = "SpO2 %", font = self.vitals_subtitle_font,
+			anchor ="w", width = 35, fg=settings.font_color, bg = settings.back_color)
+		self.temp_text = tk.Label(self.temp_frame, text = "TEMP (" + settings.deg + "F)", font = self.vitals_subtitle_font,
+		 anchor ="w", width = 35, fg=settings.font_color, bg = settings.back_color)
+		self.pulse_transit_text = tk.Label(self.pulse_transit_frame, text = "PULSE TRANSIT TIME (MS)", font = self.vitals_subtitle_font,
+			anchor ="w", width = 35, fg=settings.font_color, bg = settings.back_color)
+		self.abnormal_text = tk.Label(self.abnormal_frame, text = "ABNORMAL HB", font = self.vitals_subtitle_font,
+			anchor ="w", width = 35, fg=settings.font_color, bg = settings.back_color)
 
-		self.heartbeat_text.config(font=(None, 9))
-		self.SP02_text.config(font=(None,9))
-		self.temp_text.config(font=(None, 9))
-		self.pulse_transit_text.config(font=(None, 9))
-		self.abnormal_text.config(font=(None, 9))
+		self.heartbeat_label = tk.Label(self.heartbeat_frame, text = self.heartbeat_var, font = self.vitals_text_font,
+			pady = 10, fg=settings.font_color, bg = settings.back_color)
+		self.SP02_label = tk.Label(self.SP02_frame, text = self.SP02_var, font = self.vitals_text_font,
+			pady = 10, fg=settings.font_color, bg = settings.back_color)
+		self.temp_label = tk.Label(self.temp_frame, text = self.temp_var, font = self.vitals_text_font,
+			pady = 10, fg=settings.font_color, bg = settings.back_color)
+		self.pulse_transit_label = tk.Label(self.pulse_transit_frame, text = self.pulse_transit_var, font = self.vitals_text_font,
+			pady = 10, fg=settings.font_color, bg = settings.back_color)
+		self.abnormal_label = tk.Label(self.abnormal_frame, text = self.abnormal_var, font = self.vitals_text_font,
+			pady = 10, fg=settings.font_color, bg = settings.back_color)
 
-		self.heartbeat_label = tk.Label(self.heartbeat_frame, text = self.heartbeat_var, 
-			width = 6, pady = 10)
-		self.SP02_label = tk.Label(self.SP02_frame, text = self.SP02_var, 
-			width = 6, pady = 10)
-		self.temp_label = tk.Label(self.temp_frame, text = self.temp_var, 
-			width = 6, pady = 10)
-		self.pulse_transit_label = tk.Label(self.pulse_transit_frame, text = self.pulse_transit_var, 
-			width = 6, pady = 10)
-		self.abnormal_label = tk.Label(self.abnormal_frame, text = self.abnormal_var,
-		 width = 6, pady = 10)
-
-		self.heartbeat_label.config(font=(None, 60))
-		self.SP02_label.config(font=(None, 60))
-		self.temp_label.config(font=(None, 60))
-		self.pulse_transit_label.config( font=(None, 60))
-		self.abnormal_label.config(font=(None, 40))
-
-		self.heartbeat_text.grid(row = 0, column = 0, columnspan = 2)
-		self.SP02_text.grid(row = 0, column = 0, columnspan = 2)
-		self.temp_text.grid(row = 0, column = 0, columnspan = 2)
-		self.pulse_transit_text.grid(row = 0, column = 0, columnspan = 2)
-		self.abnormal_text.grid(row = 0, column = 0, columnspan = 2)
+		self.heartbeat_text.grid(row = 0, column = 0, columnspan = 1)
+		self.SP02_text.grid(row = 0, column = 0, columnspan = 1)
+		self.temp_text.grid(row = 0, column = 0, columnspan = 1)
+		self.pulse_transit_text.grid(row = 0, column = 0, columnspan = 1)
+		self.abnormal_text.grid(row = 0, column = 0, columnspan = 1)
 
 		self.heartbeat_label.grid(row = 1, column = 0, columnspan = 2)
 		self.SP02_label.grid(row = 1, column = 0, columnspan = 2)
@@ -191,17 +323,9 @@ class heartbox_wave_viewer:
 		self.pulse_transit_label.grid(row = 1, column = 0, columnspan = 2)
 		self.abnormal_label.grid(row = 1, column = 0, columnspan = 2)
 
-		self.ecg_graph_frame = tk.LabelFrame(self.root, bd = 3, text = "ECG Raw Data")
-		self.ecg_graph_frame.grid(column = 0, row = 1)
-		self.ecg_canvas = FigureCanvasTkAgg(self.ecg_fig, master=self.ecg_graph_frame)
-		self.ecg_canvas.show()
-		self.ecg_canvas.get_tk_widget().grid(column=0,row=0)
 
-		self.ppg_graph_frame = tk.LabelFrame(self.root, bd = 3, text = "PPG Raw Data")
-		self.ppg_graph_frame.grid(column = 0, row = 2)
-		self.ppg_canvas = FigureCanvasTkAgg(self.ppg_fig, master=self.ppg_graph_frame)
-		self.ppg_canvas.show()
-		self.ppg_canvas.get_tk_widget().grid(column=0,row=0)
+	#defines absolute layout of all top level widgets
+	#def viewer_layout(self):
 
 	#graph renderer for recorded data
 	def read_recorded_samples(self):
@@ -311,7 +435,50 @@ class heartbox_wave_viewer:
 			self.root.after(0, self.read_live_samples)
 
 
-	#renders a single frame of plotting ECG/PPG data and biometrics	
+	def bind_shortcuts(self):
+		self.root.bind("<F11>", self.toggle_fullscreen)
+		self.root.bind("<Escape>", self.end_fullscreen)
+
+	def toggle_fullscreen(self, event=None):
+		self.fullscreen_state = not self.fullscreen_state  # Just toggling the boolean
+		self.root.attributes("-fullscreen", self.fullscreen_state)
+
+		self.screen_width = self.root.winfo_screenwidth()
+		self.screen_height = self.root.winfo_screenheight()
+
+		if(not self.fullscreen_state):
+			ecg_width = self.ecg_fig.get_size_inches()[0] * float(self.screen_width) / float(self.curr_screen_width)
+			ecg_height = self.ecg_fig.get_size_inches()[1] * float(self.screen_height) / float(self.curr_screen_height)
+			ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.screen_width) / float(self.curr_screen_width)
+			ppg_height = self.ppgfig.get_size_inches()[1] * float(self.screen_height) / float(self.curr_screen_height)
+			self.ecg_fig.set_size_inches(ecg_width, ecg_height)
+			self.ppg_fig.set_size_inches(ppg_width, ppg_height)
+			self.curr_screen_width = 1200
+			self.curr_screen_height = 700
+		else:
+			ecg_width = float(self.ecg_fig.get_size_inches()[0]) * float(self.screen_width) / float(1200)
+			ecg_height = float(self.ecg_fig.get_size_inches()[1]) * float(self.screen_height) / float(700)
+			ppg_width = float(self.ppg_fig.get_size_inches()[0])* float(self.screen_width) /float(self.curr_screen_width)
+			ppg_height = float(self.ppg_fig.get_size_inches()[1])* float(self.screen_height) / float(self.curr_screen_height)
+			self.ecg_fig.set_size_inches(ecg_width, ecg_height, forward=True)
+			self.ppg_fig.set_size_inches(ppg_width, ppg_height, forward=True)
+			self.curr_screen_width = self.screen_width
+			self.curr_screen_height = self.screen_height
+
+		return "break"
+
+
+	def end_fullscreen(self, event=None):
+		self.fullscreen_state = False
+
+		self.screen_width = self.root.winfo_screenwidth()
+		self.screen_height = self.root.winfo_screenheight()
+
+		self.curr_screen_width = 1200
+		self.curr_screen_height = 700
+
+		self.root.attributes("-fullscreen", False)
+		return "break"
 
 if __name__ == "__main__":
 	graph_viewer = heartbox_wave_viewer()
