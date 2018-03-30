@@ -1,6 +1,8 @@
 import serial
- 
-def heartbox_uart():
+import settings
+import socket
+
+def heartbox_uart(q):
 	ser = serial.Serial()
 	ser.baudrate = 460800
 	ser.open()
@@ -17,7 +19,7 @@ def heartbox_uart():
 	settings.q.put('Q')
 
 
-def heartbox_udp():
+def heartbox_udp(q):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
 	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	sock.bind((settings.UDP_IP, settings.UDP_PORT))
@@ -31,6 +33,7 @@ def heartbox_udp():
 		#print sample
 				#here send any data you want to send to the other process, can be any pickable object
 		q.put(data)
+		#print settings.q.get()
 	sock.close()
 	q.put('Q')
 

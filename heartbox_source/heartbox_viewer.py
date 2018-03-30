@@ -29,9 +29,10 @@ class heartbox_wave_viewer:
 		self.screen_width = self.root.winfo_screenwidth()
 		self.screen_height = self.root.winfo_screenheight()
 		self.curr_screen_width = 1200
-		self.curr_screen_height = 700
+		self.curr_screen_height = 700		
+		self.root.attributes("-toolwindow", 1) 
+		self.frame_num = 0
 
-		self.root.attributes("-toolwindow",1) 
 		self.root.configure(bg = settings.back_color)
 		self.root.title('HeartBox Wavetool')
 
@@ -39,6 +40,10 @@ class heartbox_wave_viewer:
 		#self.root.attributes("-zoomed", True)
 		self.root.resizable(False, False)
 		self.fullscreen_state = False
+
+		self.heartbox_connect_state = False
+		self.ecg_disconnect_state =True
+		self.ppg_disconnect_state = True
 
 		self.vitals_title_font = tkFont.Font(family = 'Consolas', size = 15)
 		self.vitals_subtitle_font = tkFont.Font(family = 'Consolas', size = 15)
@@ -50,15 +55,13 @@ class heartbox_wave_viewer:
 		self.menu_layout()
 		self.graph_layout()
 		self.vitals_layout()
-		#self.startup()
-
 
 	def startup(self):
 		#for offline viewing, reads data from csv
 		if (settings.isComm):
-			self.simulate=multiprocessing.Process(None,heartbox_uart,args=(settings.q,))
+			self.simulate=multiprocessing.Process(None,heartbox_uart.heartbox_udp,args=(settings.q,))
 			self.simulate.start()
-			#pdb.set_trace()
+				#pdb.set_trace()
 			self.read_live_samples()
 		else:
 			self.read_recorded_samples()
@@ -83,8 +86,6 @@ class heartbox_wave_viewer:
 		self.ecg_ax.locator_params(axis='x', nbins =2)
 		self.ppg_ax.locator_params(axis='y', nbins =2)
 		self.ppg_ax.locator_params(axis='x', nbins =2)
-
-		self.ppg_ax = self.ppg_fig.add_subplot(1,1,1)
 
 		self.ecg_fig.set_facecolor(settings.back_color)
 		self.ppg_fig.set_facecolor(settings.back_color)
@@ -129,8 +130,15 @@ class heartbox_wave_viewer:
 
 		self.ecg_background = self.ecg_fig.canvas.copy_from_bbox(self.ecg_ax.bbox)
 		self.ppg_background = self.ppg_fig.canvas.copy_from_bbox(self.ppg_ax.bbox)
+		
+		self.ecg_disconnect = self.ecg_ax.text(0.5, 0.5,'---- DISCONNECTED ----', size=20, 
+			ha = 'center', va = 'center', transform=self.ecg_ax.transAxes, color=settings.graph_color)
 
-	#defines internal layout of menubar
+		self.ppg_disconnect = self.ppg_ax.text(0.5, 0.5,'---- DISCONNECTED ----', size=20, 
+			ha = 'center', va = 'center', transform=self.ecg_ax.transAxes, color=settings.graph_color)
+		
+
+		#defines internal layout of menubar
 	def menu_layout(self):
 		self.root.iconbitmap(default=settings.ICON_PATH)
 
@@ -153,6 +161,7 @@ class heartbox_wave_viewer:
 		self.tools_button.grid(row = 0, column = 2)
 		self.help_button.grid(row = 0, column = 3)
 		self.label.grid(row = 0, column = 4)
+
 		self.menu_frame.columnconfigure(0, weight = 0) 
 		self.menu_frame.columnconfigure(1, weight = 0)
 		self.menu_frame.columnconfigure(2, weight = 0)
@@ -162,14 +171,14 @@ class heartbox_wave_viewer:
 		self.file_button.menu= tk.Menu(self.file_button, tearoff = 0,
 		 background = settings.back_color, fg= settings.font_color, font = self.vitals_menubar_font)
 		self.file_button['menu'] = self.file_button.menu
-		self.file_button.menu.add_command(label="Connect", )
-		self.file_button.menu.add_command(label="Disconnect Ctrl+D")
+		self.file_button.menu.add_command(label="Connect HeartBox", command=self.connect_heartbox)
+		self.file_button.menu.add_command(label="Disconnect HeartBox", command= self.disconnect_heartbox)
 		self.file_button.menu.add_separator()
-		self.file_button.menu.add_command(label="Register Dump")
+		self.file_button.menu.add_command(label="Option 1")
 		self.file_button.menu.add_separator()
-		self.file_button.menu.add_command(label="Load Cfg Ctrl+L")
-		self.file_button.menu.add_command(label="Save Cfg Ctrl+S")
-		self.file_button.menu.add_command(label="Apply Config")
+		self.file_button.menu.add_command(label="Option 2")
+		self.file_button.menu.add_command(label="Option 3")
+		self.file_button.menu.add_command(label="Option 4")
 		self.file_button.menu.add_separator()
 		self.file_button.menu.add_command(label="Exit")
 
@@ -224,16 +233,16 @@ class heartbox_wave_viewer:
 			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
 		self.ecg_graph_frame.grid(column = 0, row = 0)
 		self.ecg_canvas = FigureCanvasTkAgg(self.ecg_fig, master=self.ecg_graph_frame)
-		self.ecg_canvas.show()
+		#self.ecg_canvas.show()
 		self.ecg_canvas.get_tk_widget().grid(column=0,row=0)
 
 		self.ppg_graph_frame = tk.LabelFrame(self.all_graph_frame, bd = 1, text = "PPG",
 			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
 		self.ppg_graph_frame.grid(column = 0, row = 1)
 		self.ppg_canvas = FigureCanvasTkAgg(self.ppg_fig, master=self.ppg_graph_frame)
-		self.ppg_canvas.show()
+		#self.ppg_canvas.show()
 		self.ppg_canvas.get_tk_widget().grid(column=0,row=0)
-	
+		
 	#defines internal layout of vitals
 	def vitals_layout(self):
 		self.heartbeat_var = tk.IntVar()
@@ -340,7 +349,6 @@ class heartbox_wave_viewer:
 		self.ecg_im.set_ydata(self.ecg_data[self.ecg_start_graph_index: self.n])
 		self.ppg_im.set_xdata(np.arange(self.ecg_start_graph_index, self.n))
 		self.ppg_im.set_ydata(self.ppg_data[self.ppg_start_graph_index: self.n])
-		
 
 		#self.heartbeat_var = np.random.randint(40, 60)
 		# self.SP02_var = np.random.randint(20, 30)
@@ -354,8 +362,9 @@ class heartbox_wave_viewer:
 		# self.pulse_transit_label.configure(text = self.pulse_transit_var)
 		# self.abnormal_label.configure(text = self.abnormal_var)
 
-		if ((self.n % self.repeat_length) == 0):
-
+		#in the case where we need to refresh the x axis
+		if ((self.n / self.repeat_length ) > self.frame_num):
+			self.frame_num = self.n / self.repeat_length
 			self.ppg_start_graph_index = self.n 
 			self.ecg_start_graph_index = self.n
 
@@ -385,6 +394,7 @@ class heartbox_wave_viewer:
 			self.ecg_fig.canvas.draw()
 			self.ppg_fig.canvas.draw()
 
+		#otherwise, we can plot efficiently since we don't need to change the viewing window
 		else:
 			if(self.ecg_data[self.n] > self.ecg_max):
 				self.ecg_max = 2*self.ecg_data[self.n]
@@ -420,10 +430,37 @@ class heartbox_wave_viewer:
 	#graph renderer for live data
 	def read_live_samples(self):
 		#while(~q.empty()):
-		filtered_ppg, filtered_ecg = self.dsp.filt_data_gen()
-		self.heartbox_var = self.dsp.calc_heartrate()
+		if(self.heartbox_connect_state):
+			filtered_data = self.dsp.filt_data_gen()
+			if(filtered_data != 'Q' and filtered_data != 'B'):
+				#print 'X'
+				filtered_ppg = filtered_data[0,:]
+				filtered_ecg = filtered_data[1,:]
+				self.heartbox_var = self.dsp.calc_heartrate()
+				self.ppg_data = np.append(self.ppg_data, filtered_ppg)
+				self.ecg_data = np.append(self.ecg_data, filtered_ecg)
 
-		if(filtered_ecg != 'Q'):
+				#print self.ppg_data[self.n]
+				self.n = self.n + filtered_ecg.size - 1
+				self.update_viewer()
+				self.root.after(0, self.read_live_samples)
+				self.n = self.n + 1
+			elif (filtered_data == 'Q'):
+				#print 'R'
+				self.root.after(0, self.read_live_samples)
+			elif (filtered_data == 'B'):
+				#print 'B'
+				self.root.after(0, self.read_live_samples)
+
+	def read_live_samples_old(self):
+		#while(~q.empty()):
+		filtered_data = self.dsp.filt_data_gen()
+
+		filtered_ppg = filtered_data[0,:]
+		filtered_ecg = filtered_data[1,:]
+		if(filtered_ecg != 'Q' and filtered_ppg != 'Q' ):
+			#pdb.set_trace()		
+			self.heartbox_var = self.dsp.calc_heartrate()
 			self.ppg_data = np.append(self.ppg_data, filtered_ppg)
 			self.ecg_data = np.append(self.ecg_data, filtered_ecg)
 
@@ -434,10 +471,23 @@ class heartbox_wave_viewer:
 		else:
 			self.root.after(0, self.read_live_samples)
 
-
 	def bind_shortcuts(self):
 		self.root.bind("<F11>", self.toggle_fullscreen)
 		self.root.bind("<Escape>", self.end_fullscreen)
+
+	def connect_heartbox(self):
+		self.heartbox_connect_state = True
+		if(self.ecg_disconnect_state):
+			self.toggle_ecg_disconnect()
+			self.toggle_ppg_disconnect()
+		self.startup()
+
+	def disconnect_heartbox(self):
+		self.heartbox_connect_state = False
+		if(not self.ecg_disconnect_state):
+			self.toggle_ecg_disconnect()
+			self.toggle_ppg_disconnect()
+
 
 	def toggle_fullscreen(self, event=None):
 		self.fullscreen_state = not self.fullscreen_state  # Just toggling the boolean
@@ -453,6 +503,8 @@ class heartbox_wave_viewer:
 			ppg_height = self.ppgfig.get_size_inches()[1] * float(self.screen_height) / float(self.curr_screen_height)
 			self.ecg_fig.set_size_inches(ecg_width, ecg_height)
 			self.ppg_fig.set_size_inches(ppg_width, ppg_height)
+			self.ecg_fig.canvas.draw()
+			self.ppg_fig.canvas.draw()
 			self.curr_screen_width = 1200
 			self.curr_screen_height = 700
 		else:
@@ -462,11 +514,35 @@ class heartbox_wave_viewer:
 			ppg_height = float(self.ppg_fig.get_size_inches()[1])* float(self.screen_height) / float(self.curr_screen_height)
 			self.ecg_fig.set_size_inches(ecg_width, ecg_height, forward=True)
 			self.ppg_fig.set_size_inches(ppg_width, ppg_height, forward=True)
+			self.ecg_fig.canvas.draw()
+			self.ppg_fig.canvas.draw()
 			self.curr_screen_width = self.screen_width
 			self.curr_screen_height = self.screen_height
 
 		return "break"
 
+	def toggle_ecg_disconnect(self):
+		if(not self.ecg_disconnect_state):
+			self.ecg_disconnect.set_text('---- DISCONNECTED ----')
+			self.ecg_disconnect_state = True
+
+		else:
+			self.ecg_disconnect.set_text('')
+			self.ecg_disconnect_state = False
+
+		self.ecg_fig.canvas.draw()
+		self.ppg_fig.canvas.draw()
+
+	def toggle_ppg_disconnect(self):
+		if(not self.ppg_disconnect_state):
+			self.ppg_disconnect.set_text('---- DISCONNECTED ----')
+			self.ppg_disconnect_state = True
+		else:
+			self.ppg_disconnect.set_text('')
+			self.ppg_disconnect_state = False
+
+		self.ecg_fig.canvas.draw()
+		self.ppg_fig.canvas.draw()
 
 	def end_fullscreen(self, event=None):
 		self.fullscreen_state = False

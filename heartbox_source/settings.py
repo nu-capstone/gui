@@ -17,7 +17,7 @@ _, ICON_PATH = tempfile.mkstemp()
 with open(ICON_PATH, 'wb') as icon_file:
     icon_file.write(ICON)
 
-condition_set = ('NORMAL', 'WARNING', 'CRITICAL')
+condition_set = ('NORMAL', 'NORMAL', 'NORMAL')
 
 isComm = 1 #currently hard-coded settings for live reading (1) or from file (0)
 
@@ -25,13 +25,7 @@ UDP_IP = "192.168.56.1" #only for UDP communication with old PCB
 UDP_PORT = 50007  #only for UDP communication with old PCB
 
 
-filterCoeffB_ppg_H, filterCoeffA_ppg_H = signal.butter(5,.0025,'highpass')
-filterCoeffB_ppg_L, filterCoeffA_ppg_L = signal.butter(5,.2,'lowpass')
-filterCoeffB_ecg_H, filterCoeffA_ecg_H = signal.butter(5,.005,'highpass')
-filterCoeffB_ecg_L, filterCoeffA_ecg_L = signal.butter(5,.3,'lowpass')
 
-filter_length = 20
-sample_rate = 50.0
-
+global q 
 q = multiprocessing.Queue()
 
