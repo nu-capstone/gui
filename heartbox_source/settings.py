@@ -8,6 +8,7 @@ font_color = '#32cd32'  #neon green, colors the text
 grid_color = '#32cd32'  #neon green, colors the graph's grid/axes
 back_color = '#000000' #neon green, colors the background
 
+#transparent icon to replace default tkinter icon
 ICON = (b'\x00\x00\x01\x00\x01\x00\x10\x10\x00\x00\x01\x00\x08\x00h\x05\x00\x00'
         b'\x16\x00\x00\x00(\x00\x00\x00\x10\x00\x00\x00 \x00\x00\x00\x01\x00'
         b'\x08\x00\x00\x00\x00\x00@\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
@@ -17,15 +18,14 @@ _, ICON_PATH = tempfile.mkstemp()
 with open(ICON_PATH, 'wb') as icon_file:
     icon_file.write(ICON)
 
+#condition variable
 condition_set = ('NORMAL', 'NORMAL', 'NORMAL')
 
 isComm = 1 #currently hard-coded settings for live reading (1) or from file (0)
 
 UDP_IP = "192.168.56.1" #only for UDP communication with old PCB
 UDP_PORT = 50007  #only for UDP communication with old PCB
-
-
-
+spacer_text = " "  * 145
 global q 
 q = multiprocessing.Queue()
 
