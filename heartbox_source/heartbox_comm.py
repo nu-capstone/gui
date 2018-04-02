@@ -1,10 +1,11 @@
 import serial
 import settings
 import socket
-from bluetooth import *
+#from bluetooth import *
 import pdb
 import time
 import pprint
+
 def heartbox_uart_receive(q):
 	ser = serial.Serial()
 	ser.baudrate = 460800

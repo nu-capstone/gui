@@ -43,11 +43,17 @@ class heartbox_wave_viewer:
 		self.ecg_disconnect_state =True
 		self.ppg_disconnect_state = True
 
-		self.vitals_title_font = tkFont.Font(family = 'Consolas', size = 15)
-		self.vitals_subtitle_font = tkFont.Font(family = 'Consolas', size = 15)
-		self.vitals_menubar_font = tkFont.Font(family = 'Consolas', size = 10)
-		self.vitals_text_font = tkFont.Font(family = 'Consolas', size = 55)
-		self.vitals_subtext_font = tkFont.Font(family = 'Consolas', size = 10)
+		self.vitals_title_font_size = 15
+		self.vitals_subtitle_font_size = 15
+		self.vitals_menubar_font_size = 10 #default values for 1200x700 font
+		self.vitals_text_font_size = 55
+		self.vitals_subtext_font_size = 10
+
+		self.vitals_title_font = tkFont.Font(family = 'Consolas', size = self.vitals_title_font_size)
+		self.vitals_subtitle_font = tkFont.Font(family = 'Consolas', size = self.vitals_subtitle_font_size)
+		self.vitals_menubar_font = tkFont.Font(family = 'Consolas', size = self.vitals_menubar_font_size)
+		self.vitals_text_font = tkFont.Font(family = 'Consolas', size = self.vitals_text_font_size)
+		self.vitals_subtext_font = tkFont.Font(family = 'Consolas', size = self.vitals_subtext_font_size)
 
 		self.setup_plots()
 		self.bind_shortcuts()
@@ -239,11 +245,8 @@ class heartbox_wave_viewer:
 			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
 		self.ecg_graph_frame.grid(column = 0, row = 0, sticky = 'E' + 'W' + 'N' + 'S')
 		self.ecg_graph_frame.columnconfigure(0, weight = 1)
-		self.all_graph_frame.rowconfigure(0, weight = 1)
+		self.ecg_graph_frame.rowconfigure(0, weight = 1)
 
-		self.ecg_canvas = FigureCanvasTkAgg(self.ecg_fig, master=self.ecg_graph_frame)
-		#self.ecg_canvas.show()
-		self.ecg_canvas.get_tk_widget().grid(column=0,row=0, sticky = 'E' + 'W' + 'N' + 'S')
 
 		self.ppg_graph_frame = tk.LabelFrame(self.all_graph_frame, bd = 1, text = "PPG",
 			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
@@ -251,22 +254,27 @@ class heartbox_wave_viewer:
 		self.ppg_graph_frame.columnconfigure(0, weight = 1)
 		self.ppg_graph_frame.rowconfigure(0, weight = 1)
 
+
+		self.ecg_canvas = FigureCanvasTkAgg(self.ecg_fig, master=self.ecg_graph_frame)
+		#self.ecg_canvas.show()
+		self.ecg_canvas.get_tk_widget().grid(column=0,row=0, sticky = 'E' + 'W' + 'N' + 'S')
+
 		self.ppg_canvas = FigureCanvasTkAgg(self.ppg_fig, master=self.ppg_graph_frame)
 		#self.ppg_canvas.show()
-		self.ppg_canvas.get_tk_widget().grid(column=0,row=0,sticky = 'E' + 'W' + 'N' + 'S')
+		self.ppg_canvas.get_tk_widget().grid(column=0, row=0, sticky = 'E' + 'W' + 'N' + 'S')
 		
 	#defines internal layout of vitals
 	def vitals_layout(self):
-		self.heartbeat_var = tk.StringVar()
-		self.SP02_var = tk.StringVar()
-		self.temp_var = tk.StringVar()
-		self.pulse_transit_var = tk.StringVar()
+		self.heartbeat_var = tk.IntVar()
+		self.SP02_var = tk.IntVar()
+		self.temp_var = tk.IntVar()
+		self.pulse_transit_var = tk.IntVar()
 		self.abnormal_var = tk.StringVar()
 
-		self.heartbeat_var = str(np.random.randint(40, 60))
-		self.SP02_var = str(np.random.randint(20, 30))
-		self.temp_var = str(np.random.randint(98, 102))
-		self.pulse_transit_var = str(np.random.randint(50, 55))
+		self.heartbeat_var = np.random.randint(40, 60)
+		self.SP02_var = np.random.randint(20, 30)
+		self.temp_var = np.random.randint(98, 102)
+		self.pulse_transit_var = np.random.randint(50, 55)
 		self.abnormal_var = settings.condition_set[np.random.randint(0, 3)]
 
 		self.heartbeat_var_min = self.heartbeat_var
@@ -280,7 +288,7 @@ class heartbox_wave_viewer:
 		self.ptt_var_max = self.pulse_transit_var
 
 		self.root.columnconfigure(0, weight = 7)
-		self.root.columnconfigure(1, weight = 3)
+		self.root.columnconfigure(1, weight = 1)
 		self.root.rowconfigure(0, weight = 0)
 		self.root.rowconfigure(1, weight = 1)
 
@@ -314,18 +322,23 @@ class heartbox_wave_viewer:
 
 		self.heartbeat_frame.columnconfigure(0, weight = 2)
 		self.heartbeat_frame.columnconfigure(2, weight = 2)
+		self.heartbeat_frame.rowconfigure(1, weight = 1)
 
 		self.SP02_frame.columnconfigure(0, weight = 2)
 		self.SP02_frame.columnconfigure(2, weight = 2)
+		self.SP02_frame.rowconfigure(1, weight = 1)
 
 		self.temp_frame.columnconfigure(0, weight = 2)
 		self.temp_frame.columnconfigure(2, weight = 2)
+		self.temp_frame.rowconfigure(1, weight = 1)
 
 		self.pulse_transit_frame.columnconfigure(0, weight = 2)
 		self.pulse_transit_frame.columnconfigure(2, weight = 2)
+		self.pulse_transit_frame.rowconfigure(1, weight = 1)
 
 		self.abnormal_frame.columnconfigure(0, weight = 0)
 		self.abnormal_frame.columnconfigure(1, weight = 2)
+		self.abnormal_frame.rowconfigure(1, weight = 1)
 
 		self.heartbeat_text = tk.Label(self.heartbeat_frame, text = "ECG HR", font = self.vitals_subtitle_font,
 			anchor = "w", fg=settings.font_color, bg = settings.back_color)
@@ -366,10 +379,10 @@ class heartbox_wave_viewer:
 		self.pulse_transit_label.grid(row = 1, column = 0, columnspan = 2)
 		self.abnormal_label.grid(row = 1, column = 0, columnspan = 2)
 
-		self.frame_heartbeat_min_max.grid(row = 1, column = 2, sticky = "W")
-		self.frame_SP02_min_max.grid(row = 1, column = 2,  sticky = "W")
-		self.frame_temp_min_max.grid(row = 1, column = 2,  sticky = "W")
-		self.frame_ptt_min_max.grid(row = 1, column = 2, sticky = "W")
+		self.frame_heartbeat_min_max.grid(row = 1, column = 2)
+		self.frame_SP02_min_max.grid(row = 1, column = 2)
+		self.frame_temp_min_max.grid(row = 1, column = 2)
+		self.frame_ptt_min_max.grid(row = 1, column = 2)
 
 		self.heartbeat_min_label = tk.Label(self.frame_heartbeat_min_max, text = "MIN:", font = self.vitals_subtext_font, 
 			fg=settings.font_color, bg = settings.back_color)
@@ -599,22 +612,30 @@ class heartbox_wave_viewer:
 			ecg_height = self.ecg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
 			ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
 			ppg_height = self.ppg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
-			self.spacer_menu.config(text = settings.spacer_text)	
-			#self.ecg_fig.set_size_inches(ecg_width, ecg_height)
-			#self.ppg_fig.set_size_inches(ppg_width, ppg_height)
-			#self.ecg_fig.canvas.draw()
-			#self.ppg_fig.canvas.draw()
 
+			self.vitals_title_font.configure(size = self.vitals_title_font_size)
+			self.vitals_subtitle_font.configure(size = self.vitals_subtitle_font_size)
+			self.vitals_menubar_font.configure(size = self.vitals_menubar_font_size)
+			self.vitals_text_font.configure(size = self.vitals_text_font_size)
+			self.vitals_subtext_font.configure(size = self.vitals_subtext_font_size)
 		else:
 			ecg_width = float(self.ecg_fig.get_size_inches()[0]) * float(self.screen_width) / float(self.min_screen_width)
 			ecg_height = float(self.ecg_fig.get_size_inches()[1]) * float(self.screen_height) /  float(self.min_screen_height)
 			ppg_width = float(self.ppg_fig.get_size_inches()[0])* float(self.screen_width) /float(self.min_screen_width)
 			ppg_height = float(self.ppg_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
-			self.spacer_menu.config(text = settings.spacer_text + ' ' * int(len(settings.spacer_text)*float(self.min_screen_width) / float(self.screen_width)))
-			#self.ecg_fig.set_size_inches(ecg_width, ecg_height, forward=True)
-			#self.ppg_fig.set_size_inches(ppg_width, ppg_height, forward=True)
-			#self.ecg_fig.canvas.draw()
-			#self.ppg_fig.canvas.draw()
+			new_to_old_ratio = float(self.screen_width) / float(self.min_screen_width)
+
+			self.vitals_title_font.configure(size = int(self.vitals_title_font_size * new_to_old_ratio))
+			self.vitals_subtitle_font.configure(size = int(self.vitals_subtitle_font_size * new_to_old_ratio))
+			self.vitals_menubar_font.configure(size = int(self.vitals_menubar_font_size * new_to_old_ratio))
+			self.vitals_text_font.configure(size = int(self.vitals_text_font_size * new_to_old_ratio))
+			self.vitals_subtext_font.configure(size = int(self.vitals_subtext_font_size * new_to_old_ratio))
+
+		self.ecg_fig.set_size_inches(ecg_width, ecg_height)
+		self.ppg_fig.set_size_inches(ppg_width, ppg_height)
+
+		self.ecg_fig.canvas.draw()
+		self.ppg_fig.canvas.draw()
 
 		return "break"
 
@@ -643,14 +664,18 @@ class heartbox_wave_viewer:
 
 	def end_fullscreen(self, event=None):
 		self.fullscreen_state = False
-
-		self.screen_width = self.root.winfo_screenwidth()
-		self.screen_height = self.root.winfo_screenheight()
-
-		self.curr_screen_width = 1200
-		self.curr_screen_height = 700
-
 		self.root.attributes("-fullscreen", False)
+
+		ecg_width = self.ecg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width) 
+		ecg_height = self.ecg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
+		ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
+		ppg_height = self.ppg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
+		self.spacer_menu.config(text = settings.spacer_text)	
+		self.ecg_fig.set_size_inches(ecg_width, ecg_height)
+		self.ppg_fig.set_size_inches(ppg_width, ppg_height)
+		self.ecg_fig.canvas.draw()
+		self.ppg_fig.canvas.draw()
+
 		return "break"
 
 if __name__ == "__main__":
