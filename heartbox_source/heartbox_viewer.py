@@ -43,12 +43,13 @@ class heartbox_wave_viewer:
 		self.ecg_disconnect_state =True
 		self.ppg_disconnect_state = True
 
-		self.vitals_title_font_size = 15
-		self.vitals_subtitle_font_size = 15
-		self.vitals_menubar_font_size = 10 #default values for 1200x700 font
-		self.vitals_text_font_size = 55
-		self.vitals_subtext_font_size = 10
+		self.vitals_title_font_size = 14 #default values for 1200x700 font
+		self.vitals_subtitle_font_size = 14
+		self.vitals_menubar_font_size = 10 
+		self.vitals_text_font_size = 50
+		self.vitals_subtext_font_size = 12
 
+		plt.rcParams["font.family"] = "Consolas"
 		self.vitals_title_font = tkFont.Font(family = 'Consolas', size = self.vitals_title_font_size)
 		self.vitals_subtitle_font = tkFont.Font(family = 'Consolas', size = self.vitals_subtitle_font_size)
 		self.vitals_menubar_font = tkFont.Font(family = 'Consolas', size = self.vitals_menubar_font_size)
@@ -265,7 +266,8 @@ class heartbox_wave_viewer:
 		
 	#defines internal layout of vitals
 	def vitals_layout(self):
-		self.heartbeat_var = tk.IntVar()
+
+		self.heartbeat_var = tk.IntVar() # initialize metric variables
 		self.SP02_var = tk.IntVar()
 		self.temp_var = tk.IntVar()
 		self.pulse_transit_var = tk.IntVar()
@@ -277,7 +279,7 @@ class heartbox_wave_viewer:
 		self.pulse_transit_var = np.random.randint(50, 55)
 		self.abnormal_var = settings.condition_set[np.random.randint(0, 3)]
 
-		self.heartbeat_var_min = self.heartbeat_var
+		self.heartbeat_var_min = self.heartbeat_var #initialize max/min metric vars
 		self.SP02_var_min = self.SP02_var
 		self.temp_var_min = self.temp_var
 		self.ptt_var_min = self.pulse_transit_var
@@ -287,17 +289,16 @@ class heartbox_wave_viewer:
 		self.temp_var_max = self.temp_var
 		self.ptt_var_max = self.pulse_transit_var
 
-		self.root.columnconfigure(0, weight = 7)
+		self.root.columnconfigure(0, weight = 7) #Used to allow for widgets to scale with window resolution. This is the column with the graph widgets
 		self.root.columnconfigure(1, weight = 1)
 		self.root.rowconfigure(0, weight = 0)
-		self.root.rowconfigure(1, weight = 1)
+		self.root.rowconfigure(1, weight = 1)#scales only the graph/vitals widgets, not the menubar
 
 		self.text_monitor_frame = tk.LabelFrame(self.root, bd = 1, font = self.vitals_title_font,
-			text = "VITALS", padx = 5, fg= settings.font_color, bg = settings.back_color)
+			text = "VITALS", padx = 5, fg= settings.font_color, bg = settings.back_color) #frame that contains all vital metrics
 		self.text_monitor_frame.grid(column = 1, row = 1, rowspan = 2, padx = 10, sticky = 'N' + 'W' + 'S' + 'E')
 		self.text_monitor_frame.columnconfigure(0, weight = 1)
-		self.text_monitor_frame.columnconfigure(1, weight = 0)
-		self.text_monitor_frame.rowconfigure(0, weight = 1)
+		self.text_monitor_frame.rowconfigure(0, weight = 1) #equal scaling of all vital metrics with res
 		self.text_monitor_frame.rowconfigure(1, weight = 1)
 		self.text_monitor_frame.rowconfigure(2, weight = 1)
 		self.text_monitor_frame.rowconfigure(3, weight = 1)
@@ -342,11 +343,11 @@ class heartbox_wave_viewer:
 
 		self.heartbeat_text = tk.Label(self.heartbeat_frame, text = "ECG HR", font = self.vitals_subtitle_font,
 			anchor = "w", fg=settings.font_color, bg = settings.back_color)
-		self.SP02_text = tk.Label(self.SP02_frame, text = "SpO2 %", font = self.vitals_subtitle_font,
+		self.SP02_text = tk.Label(self.SP02_frame, text = "SPO2 (%)", font = self.vitals_subtitle_font,
 			anchor ="w", fg=settings.font_color, bg = settings.back_color)
 		self.temp_text = tk.Label(self.temp_frame, text = "TEMP (" + settings.deg + "F)", font = self.vitals_subtitle_font,
 		 anchor ="w", fg=settings.font_color, bg = settings.back_color)
-		self.pulse_transit_text = tk.Label(self.pulse_transit_frame, text = "Pulse TT (MS)", font = self.vitals_subtitle_font,
+		self.pulse_transit_text = tk.Label(self.pulse_transit_frame, text = "PULSE TT (MS)", font = self.vitals_subtitle_font,
 			anchor ="w",  fg=settings.font_color, bg = settings.back_color)
 		self.abnormal_text = tk.Label(self.abnormal_frame, text = "ABNORMAL HB", font = self.vitals_subtitle_font,
 			anchor ="w", fg=settings.font_color, bg = settings.back_color)
@@ -567,24 +568,10 @@ class heartbox_wave_viewer:
 			elif (filtered_data == 'B'):
 				#print 'B'
 				self.root.after(0, self.read_live_samples)
-
-	def read_live_samples_old(self):
-		#while(~q.empty()):
-		filtered_data = self.dsp.filt_data_gen()
-
-		filtered_ppg = filtered_data[0,:]
-		filtered_ecg = filtered_data[1,:]
-		if(filtered_ecg != 'Q' and filtered_ppg != 'Q' ):
-			self.heartbox_var = self.dsp.calc_heartrate()
-			self.ppg_data = np.append(self.ppg_data, filtered_ppg)
-			self.ecg_data = np.append(self.ecg_data, filtered_ecg)
-
-			#print self.ppg_data[self.n]
-			self.update_viewer()
-			self.root.after(0, self.read_live_samples)
-			self.n = self.n + 1
 		else:
-			self.root.after(0, self.read_live_samples)
+			self.ppg_disconnect.set_text('---- DISCONNECTED ----')
+			time.sleep(1)
+			self.ppg_disconnect.set_text('')
 
 	def bind_shortcuts(self):
 		self.root.bind("<F11>", self.toggle_fullscreen)
@@ -618,12 +605,17 @@ class heartbox_wave_viewer:
 			self.vitals_menubar_font.configure(size = self.vitals_menubar_font_size)
 			self.vitals_text_font.configure(size = self.vitals_text_font_size)
 			self.vitals_subtext_font.configure(size = self.vitals_subtext_font_size)
+			self.ecg_disconnect.set_size(20)
+			self.ppg_disconnect.set_size(20)
+
 		else:
 			ecg_width = float(self.ecg_fig.get_size_inches()[0]) * float(self.screen_width) / float(self.min_screen_width)
 			ecg_height = float(self.ecg_fig.get_size_inches()[1]) * float(self.screen_height) /  float(self.min_screen_height)
 			ppg_width = float(self.ppg_fig.get_size_inches()[0])* float(self.screen_width) /float(self.min_screen_width)
 			ppg_height = float(self.ppg_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
 			new_to_old_ratio = float(self.screen_width) / float(self.min_screen_width)
+			self.ecg_disconnect.set_size(20*new_to_old_ratio)
+			self.ppg_disconnect.set_size(20*new_to_old_ratio)
 
 			self.vitals_title_font.configure(size = int(self.vitals_title_font_size * new_to_old_ratio))
 			self.vitals_subtitle_font.configure(size = int(self.vitals_subtitle_font_size * new_to_old_ratio))
@@ -670,9 +662,10 @@ class heartbox_wave_viewer:
 		ecg_height = self.ecg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
 		ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
 		ppg_height = self.ppg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
-		self.spacer_menu.config(text = settings.spacer_text)	
 		self.ecg_fig.set_size_inches(ecg_width, ecg_height)
 		self.ppg_fig.set_size_inches(ppg_width, ppg_height)
+		self.ecg_disconnect.set_size(20)
+		self.ppg_disconnect.set_size(20)
 		self.ecg_fig.canvas.draw()
 		self.ppg_fig.canvas.draw()
 
