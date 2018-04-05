@@ -7,7 +7,8 @@ graph_color = '#32cd32' #neon green, colors the data
 font_color = '#32cd32'  #neon green, colors the text
 grid_color = '#32cd32'  #neon green, colors the graph's grid/axes
 back_color = '#000000' #neon green, colors the background
-
+large_value = 999999 #bigger than 16 bit
+large_value_neg = -999999 
 #transparent icon to replace default tkinter icon
 ICON = (b'\x00\x00\x01\x00\x01\x00\x10\x10\x00\x00\x01\x00\x08\x00h\x05\x00\x00'
         b'\x16\x00\x00\x00(\x00\x00\x00\x10\x00\x00\x00 \x00\x00\x00\x01\x00'

@@ -4,12 +4,13 @@ import pdb
 import settings
 
 filterCoeffB_ppg_H, filterCoeffA_ppg_H = signal.butter(5,.0025,'highpass')
-filterCoeffB_ppg_L, filterCoeffA_ppg_L = signal.butter(5,.2,'lowpass')
+filterCoeffB_ppg_L, filterCoeffA_ppg_L = signal.butter(5,.1,'lowpass')
 filterCoeffB_ecg_H, filterCoeffA_ecg_H = signal.butter(5,.005,'highpass')
 filterCoeffB_ecg_L, filterCoeffA_ecg_L = signal.butter(5,.3,'lowpass')
 
 filter_length = 20 #cannot be hardcoded
 sample_rate = 50.0
+num_seconds = 20
 
 class heartbox_dsp:
 	def __init__(self):
@@ -18,46 +19,18 @@ class heartbox_dsp:
 		self.fifo_ecg_length = 1024
 		self.fifo_ecg = np.zeros(self.fifo_ppg_length)
 		self.fifo_ppg = np.zeros(self.fifo_ppg_length)
+		self.fifo_R = np.zeros(int(sample_rate*num_seconds))
+		self.fifo_IR = np.zeros(int(sample_rate*num_seconds))
+		self.SP02_counter = 0
+		self.SP02_valid = False
+		self.SP02_value = 0
+		self.f = open("sp02.txt","w+")
 
-	def filt_data_gen1(self):
-		# check if new sample ready
-		#pdb.set_trace()
-		if not(settings.q.empty()):
-			#print 'R'
-			sample = settings.q.get_nowait()
-			print sample
+	def parse_sample(self, sample):
+		if(len(sample) < 30):
+			return 0, 0, 0, int(sample[-16:-8], 16), int(sample[-8:], 16)
 		else:
-			#print 'Q'
-			return 'Q', 'Q'
-
-		A = int(sample[42:50], 16)
-		B = int(sample[50:58], 16)
-
-		print A, B
-		#pdb.set_trace()
-		self.fifo_ppg = np.append(self.fifo_ppg[1:],int(sample[26:34],16))
-		self.fifo_ecg = np.append(self.fifo_ecg[1:], A-B)
-		self.numSamples = self.numSamples + 1
-
-		if(self.numSamples < filter_length):
-			return 0, 0
-		else:
-			#import pdb; pdb.set_trace()
-			filtered_ppg = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,\
-				self.fifo_ppg[self.fifo_ppg.size - filter_length:])
-
-			filtered_ppg = signal.filtfilt(filterCoeffB_ppg_H,filterCoeffA_ppg_H,filtered_ppg)
-
-			moving_ppg_avg = np.sum(filtered_ppg)
-
-
-			filtered_ecg = signal.filtfilt(filterCoeffB_ecg_L,filterCoeffA_ecg_L,\
-				self.fifo_ecg[self.fifo_ecg.size - filter_length:])
-			#filtered_ecg = signal.filtfilt(filterCoeffB_ecg_H,filterCoeffA_ecg_H,filtered_ecg)
-			#moving_ecg_avg = np.sum(filtered_ecg)
-
-			return moving_ppg_avg, filtered_ecg[filter_length-1]
-			#return filteredArray[filter_length - 1]
+			return int(sample[42:50], 16), int(sample[50:58], 16), int(sample[26:34],16), 0, 0
 
 
 	def filt_data_gen(self):
@@ -67,6 +40,7 @@ class heartbox_dsp:
 		i = 0
 
 		while not settings.q.empty():
+
 			sample_buffer.append(settings.q.get_nowait())
 			i = i + 1
 
@@ -76,19 +50,25 @@ class heartbox_dsp:
 		if(i > 0):
 			for x in range(i):
 	 			sample = sample_buffer[x]
-				A = int(sample[42:50], 16)
-				B = int(sample[50:58], 16)
+	 			#print sample
+	 			E1, E2, G, R, IR = self.parse_sample(sample)
+				
+				#E1 = E2 = G = R = IR = 0
 
 				#print A, B
 				#pdb.set_trace()
-				self.fifo_ppg = np.append(self.fifo_ppg[1:],int(sample[26:34],16))
-				self.fifo_ecg = np.append(self.fifo_ecg[1:], A-B)
+				self.fifo_ppg = np.append(self.fifo_ppg[1:],R)
+				self.fifo_ecg = np.append(self.fifo_ecg[1:], E1-E2)
+				self.fifo_IR = np.append(self.fifo_IR[1:], IR)
+				self.fifo_R = np.append(self.fifo_R[1:], R)
+
 				self.numSamples = self.numSamples + 1
+
+				self.calc_SP02()
 
 				if(self.numSamples < filter_length):
 					continue
 				else:
-					#pdb.set_trace()
 					filtered_ppg = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,\
 						self.fifo_ppg[self.fifo_ppg.size - filter_length:])
 
@@ -112,46 +92,28 @@ class heartbox_dsp:
 
 			#else:
 				#print 'Q'
+	def calc_SP02(self):
+		if(self.fifo_R[-1] < 4000):
+			self.SP02_valid = False
+			self.SP02_counter = 0
+		elif(self.SP02_counter == sample_rate * num_seconds):
+			self.SP02_valid = True
+			filteredR = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,self.fifo_R)
+			filteredIR = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,self.fifo_IR)
 
-	def filt_data_gen1(self):
-		# check if new sample ready
-		#pdb.set_trace()
-		if(~q.empty()):
-			sample = q.get()
-			#print sample
+			AC_R = np.average(np.absolute(np.gradient(filteredR)))
+			DC_R = np.average(filteredR)
+			AC_IR = np.average(np.absolute(np.gradient(filteredIR)))
+			DC_IR = np.average(filteredIR)
+			self.SP02_value = (AC_R/DC_R)/(AC_IR/DC_IR)
+			self.f.write("%f \n"% self.SP02_value)
+
 		else:
-			return 'Q'			
+			self.SP02_valid = False
+			self.SP02_counter = self.SP02_counter + 1
 
-			A = int(sample[42:50], 16)
-			B = int(sample[50:58], 16)
-
-			print A, B
-			#pdb.set_trace()
-			self.fifo_ppg = np.append(self.fifo_ppg[1:],int(sample[26:34],16))
-			self.fifo_ecg = np.append(self.fifo_ecg[1:], A-B)
-			self.numSamples = self.numSamples + 1
-
-			if(self.numSamples < filter_length):
-				return 0, 0
-			else:
-				#import pdb; pdb.set_trace()
-				filtered_ppg = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,\
-					self.fifo_ppg[self.fifo_ppg.size - filter_length:])
-
-				filtered_ppg = signal.filtfilt(filterCoeffB_ppg_H,filterCoeffA_ppg_H,filtered_ppg)
-
-				moving_ppg_avg = np.sum(filtered_ppg)
-
-
-				filtered_ecg = signal.filtfilt(filterCoeffB_ecg_L,filterCoeffA_ecg_L,\
-					self.fifo_ecg[self.fifo_ecg.size - filter_length:])
-				#filtered_ecg = signal.filtfilt(filterCoeffB_ecg_H,filterCoeffA_ecg_H,filtered_ecg)
-				#moving_ecg_avg = np.sum(filtered_ecg)
-
-				return moving_ppg_avg, filtered_ecg[filter_length-1]
-				#return filteredArray[filter_length - 1]
 	def calc_heartrate(self):
-		if(self.numSamples%(5*sample_rate)==0 and self.numSamples > 1000):
+		if(self.numSamples%(5*sample_rate) == 0 and self.numSamples > 1000):
 			hb_fft = np.fft.fft(self.fifo_ppg)
 			#pdb.set_trace()
 			#plt.figure()

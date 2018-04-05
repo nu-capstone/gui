@@ -124,14 +124,15 @@ class heartbox_wave_viewer:
 		self.ecg_ax.set_ylim([-1,1])
 		self.ppg_ax.set_ylim([-1,1])
 
-		self.ecg_im, = self.ecg_ax.plot([], [], color=(0,0,1))
-		self.ppg_im, = self.ppg_ax.plot([], [], color=(1,0,1))
+		self.ecg_im, = self.ecg_ax.plot([], [], color=(0,0,1), linewidth=0.5)
+		self.ppg_im, = self.ppg_ax.plot([], [], color=(1,0,1), linewidth=0.5)
 
 		self.n = 0
 		self.ppg_max = 1
 		self.ppg_min = -1
 		self.ecg_max = 1
 		self.ecg_min = -1
+
 		self.ppg_start_graph_index = 0
 		self.ecg_start_graph_index = 0
 
@@ -480,8 +481,6 @@ class heartbox_wave_viewer:
 
 		#in the case where we need to refresh the x axis
 		if ((self.n / self.repeat_length ) > self.frame_num):
-			
-
 			self.frame_num = self.n / self.repeat_length
 			self.ppg_start_graph_index = self.n 
 			self.ecg_start_graph_index = self.n
@@ -491,20 +490,19 @@ class heartbox_wave_viewer:
 			#lim3 = self.ecg_ax.set_ylim([np.amin(self.ecg_data[self.n: self.n + self.repeat_length]), np.amax(self.ecg_data[self.n: self.n + self.repeat_length])])
 			#lim4 = self.ppg_ax.set_ylim([np.amin(self.ppg_data[self.n: self.n + self.repeat_length]), np.amax(self.ppg_data[self.n: self.n + self.repeat_length])])
 			
-			self.ecg_max = 3
-			self.ecg_min = -3
-			self.ppg_max = 3
-			self.ppg_min = -3
+			self.ecg_max = settings.large_value_neg
+			self.ecg_min = settings.large_value
+			self.ppg_max = settings.large_value_neg
+			self.ppg_min = settings.large_value
 
 			if(self.ecg_data[self.n] > self.ecg_max):
-				self.ecg_max = 2*self.ecg_data[self.n]
+				self.ecg_max = self.ecg_data[self.n] + 500
 			elif(self.ecg_data[self.n] < self.ecg_min):
-				self.ecg_min = 2*self.ecg_data[self.n]
-
+				self.ecg_min = self.ecg_data[self.n] - 500
 			if(self.ppg_data[self.n] > self.ppg_max):
-				self.ppg_max = 2*self.ppg_data[self.n]
+				self.ppg_max = self.ppg_data[self.n] + 500
 			elif(self.ppg_data[self.n] < self.ppg_min):
-				self.ppg_min = 2*self.ppg_data[self.n]
+				self.ppg_min = self.ppg_data[self.n] - 500
 
 			limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
 			limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
@@ -514,35 +512,43 @@ class heartbox_wave_viewer:
 
 		#otherwise, we can plot efficiently since we don't need to change the viewing window
 		else:
-			if(self.ecg_data[self.n] > self.ecg_max):
-				self.ecg_max = 2*self.ecg_data[self.n]
-				limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
-				self.ecg_fig.canvas.draw()
+			if(self.ecg_max - self.ecg_min < 10000):
+				if(self.ecg_data[self.n] > self.ecg_max):
+					self.ecg_max = self.ecg_data[self.n] + 500
+					limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
+					self.ecg_fig.canvas.draw()
 
-			elif(self.ecg_data[self.n] < self.ecg_min):
-				self.ecg_min = 2*self.ecg_data[self.n]
-				limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
-				self.ecg_fig.canvas.draw()
-
+				elif(self.ecg_data[self.n] < self.ecg_min):
+					self.ecg_min = self.ecg_data[self.n] - 500
+					limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
+					self.ecg_fig.canvas.draw()
+				else:
+					self.ecg_fig.canvas.restore_region(self.ecg_background)
+					self.ecg_ax.draw_artist(self.ecg_im)
+					self.ecg_fig.canvas.blit(self.ecg_ax.bbox)
 			else:
 				self.ecg_fig.canvas.restore_region(self.ecg_background)
 				self.ecg_ax.draw_artist(self.ecg_im)
 				self.ecg_fig.canvas.blit(self.ecg_ax.bbox)
 
-			if(self.ppg_data[self.n] > self.ppg_max):
-				self.ppg_max = 2*self.ppg_data[self.n]
-				limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
-				self.ppg_fig.canvas.draw()
+			if(self.ppg_max - self.ppg_min < 10000):
+				if(self.ppg_data[self.n] > self.ppg_max):
+					self.ppg_max = self.ppg_data[self.n] + 500
+					limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
+					self.ppg_fig.canvas.draw()
 
-			elif(self.ppg_data[self.n] < self.ppg_min):
-				self.ppg_min = 2*self.ppg_data[self.n]
-				limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
-				self.ppg_fig.canvas.draw()
-
+				elif(self.ppg_data[self.n] < self.ppg_min):
+					self.ppg_min = self.ppg_data[self.n] - 500
+					limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
+					self.ppg_fig.canvas.draw()
+				else:
+					self.ppg_fig.canvas.restore_region(self.ppg_background)
+					self.ppg_ax.draw_artist(self.ppg_im)
+					self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
 			else:
-				self.ppg_fig.canvas.restore_region(self.ppg_background)
-				self.ppg_ax.draw_artist(self.ppg_im)
-				self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
+					self.ppg_fig.canvas.restore_region(self.ppg_background)
+					self.ppg_ax.draw_artist(self.ppg_im)
+					self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
 
 	#graph renderer for live data
 	def read_live_samples(self):
