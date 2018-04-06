@@ -42,6 +42,7 @@ class heartbox_wave_viewer:
 		self.heartbox_connect_state = False
 		self.ecg_disconnect_state =True
 		self.ppg_disconnect_state = True
+		self.ppg_R_disconnect_state = True
 
 		self.vitals_title_font_size = 14 #default values for 1200x700 font
 		self.vitals_subtitle_font_size = 14
@@ -85,66 +86,87 @@ class heartbox_wave_viewer:
 		#setup figure
 		self.ecg_fig = plt.figure()
 		self.ppg_fig = plt.figure()
-		self.ecg_fig.set_size_inches(8,3.5)
-		self.ppg_fig.set_size_inches(8,3.5)
+		self.ppg_R_fig = plt.figure()
+
+		self.ecg_fig.set_size_inches(8,2.5)
+		self.ppg_fig.set_size_inches(8,2.5)
+		self.ppg_R_fig.set_size_inches(8,2.5)
+
 		self.ecg_ax = self.ecg_fig.add_subplot(1,1,1)
 		self.ppg_ax = self.ppg_fig.add_subplot(1,1,1)
+		self.ppg_R_ax = self.ppg_R_fig.add_subplot(1,1,1)
+
 		self.ecg_ax.locator_params(axis='y', nbins =2)
 		self.ecg_ax.locator_params(axis='x', nbins =2)
 		self.ppg_ax.locator_params(axis='y', nbins =2)
 		self.ppg_ax.locator_params(axis='x', nbins =2)
+		self.ppg_R_ax.locator_params(axis='y', nbins =2)
+		self.ppg_R_ax.locator_params(axis='x', nbins =2)
 
-		self.ecg_fig.set_facecolor(settings.back_color)
+		self.ecg_fig.set_facecolor(settings.back_color) #colors the area surround figs
 		self.ppg_fig.set_facecolor(settings.back_color)
-		#self.ecg_ax.set_frame_on(False)
-		#self.ppg_ax.set_frame_on(False)
+		self.ppg_R_fig.set_facecolor(settings.back_color)
 
-		self.ecg_ax.set_facecolor(settings.back_color)
+		self.ecg_ax.set_facecolor(settings.back_color) #colors the internal figure area/axes
 		self.ppg_ax.set_facecolor(settings.back_color)
+		self.ppg_R_ax.set_facecolor(settings.back_color)
 
 		self.ecg_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
 		self.ppg_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
+		self.ppg_R_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
 
 
 		self.ecg_ax.xaxis.label.set_color(settings.grid_color)
 		self.ecg_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
 		self.ecg_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
 
-
 		self.ppg_ax.xaxis.label.set_color(settings.grid_color)
-		self.ppg_ax.tick_params(axis='x', colors=settings.grid_color)
-		self.ppg_ax.tick_params(axis='y', colors=settings.grid_color)
+		self.ppg_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
+		self.ppg_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
+
+
+		self.ppg_R_ax.xaxis.label.set_color(settings.grid_color)
+		self.ppg_R_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
+		self.ppg_R_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
 
 		#set up viewing window (in this case the 25 most recent values)
 		#self.repeat_length = (np.shape(self.ecg_data)[0]+1)/10
 		self.repeat_length = 500
 		self.ecg_ax.set_xlim([0,self.repeat_length])
 		self.ppg_ax.set_xlim([0,self.repeat_length])
+		self.ppg_R_ax.set_xlim([0,self.repeat_length])
 
 		self.ecg_ax.set_ylim([-1,1])
 		self.ppg_ax.set_ylim([-1,1])
+		self.ppg_R_ax.set_ylim([-1,1])
 
-		self.ecg_im, = self.ecg_ax.plot([], [], color=(0,0,1), linewidth=0.5)
-		self.ppg_im, = self.ppg_ax.plot([], [], color=(1,0,1), linewidth=0.5)
+		self.ecg_im, = self.ecg_ax.plot([], [], color=(0,0,1))
+		self.ppg_im, = self.ppg_ax.plot([], [], color=(1,0,1))
+		self.ppg_R_im, = self.ppg_R_ax.plot([], [], color=(1,0,1))
 
 		self.n = 0
-		self.ppg_max = 1
-		self.ppg_min = -1
-		self.ecg_max = 1
+		self.ecg_max = 1 #initializes max/min for y-axes to scale with data
 		self.ecg_min = -1
-
-		self.ppg_start_graph_index = 0
+		self.ppg_max = 1
+		self.ppg_min = -1	
+		self.ppg_R_max = 1
+		self.ppg_R_min = -1	
 		self.ecg_start_graph_index = 0
+		self.ppg_start_graph_index = 0
+		self.ppg_R_start_graph_index = 0
 
 		self.ecg_background = self.ecg_fig.canvas.copy_from_bbox(self.ecg_ax.bbox)
 		self.ppg_background = self.ppg_fig.canvas.copy_from_bbox(self.ppg_ax.bbox)
+		self.ppg_R_background = self.ppg_R_fig.canvas.copy_from_bbox(self.ppg_R_ax.bbox)
 		
 		self.ecg_disconnect = self.ecg_ax.text(0.5, 0.5,'---- DISCONNECTED ----', size=20, 
 			ha = 'center', va = 'center', transform=self.ecg_ax.transAxes, color=settings.graph_color)
 
 		self.ppg_disconnect = self.ppg_ax.text(0.5, 0.5,'---- DISCONNECTED ----', size=20, 
-			ha = 'center', va = 'center', transform=self.ecg_ax.transAxes, color=settings.graph_color)
+			ha = 'center', va = 'center', transform=self.ppg_ax.transAxes, color=settings.graph_color)
 		
+		self.ppg_R_disconnect = self.ppg_R_ax.text(0.5, 0.5,'---- DISCONNECTED ----', size=20, 
+			ha = 'center', va = 'center', transform=self.ppg_R_ax.transAxes, color=settings.graph_color)
 
 		#defines internal layout of menubar
 	def menu_layout(self):
@@ -241,7 +263,8 @@ class heartbox_wave_viewer:
 		self.all_graph_frame.columnconfigure(0, weight = 1)
 		self.all_graph_frame.rowconfigure(0, weight = 1)
 		self.all_graph_frame.rowconfigure(1, weight = 1)
-		self.all_graph_frame.rowconfigure(2, weight = 0)
+		self.all_graph_frame.rowconfigure(2, weight = 1)
+		self.all_graph_frame.rowconfigure(3, weight = 0)
 
 		self.ecg_graph_frame = tk.LabelFrame(self.all_graph_frame, bd = 1, text = "ECG",
 			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
@@ -249,13 +272,17 @@ class heartbox_wave_viewer:
 		self.ecg_graph_frame.columnconfigure(0, weight = 1)
 		self.ecg_graph_frame.rowconfigure(0, weight = 1)
 
-
 		self.ppg_graph_frame = tk.LabelFrame(self.all_graph_frame, bd = 1, text = "PPG",
 			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
 		self.ppg_graph_frame.grid(column = 0, row = 1, sticky = 'E' + 'W' + 'N' + 'S')
 		self.ppg_graph_frame.columnconfigure(0, weight = 1)
 		self.ppg_graph_frame.rowconfigure(0, weight = 1)
 
+		self.ppg_R_graph_frame = tk.LabelFrame(self.all_graph_frame, bd = 1, text = "PPG_R",
+			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
+		self.ppg_R_graph_frame.grid(column = 0, row = 2, sticky = 'E' + 'W' + 'N' + 'S')
+		self.ppg_R_graph_frame.columnconfigure(0, weight = 1)
+		self.ppg_R_graph_frame.rowconfigure(0, weight = 1)
 
 		self.ecg_canvas = FigureCanvasTkAgg(self.ecg_fig, master=self.ecg_graph_frame)
 		#self.ecg_canvas.show()
@@ -264,10 +291,13 @@ class heartbox_wave_viewer:
 		self.ppg_canvas = FigureCanvasTkAgg(self.ppg_fig, master=self.ppg_graph_frame)
 		#self.ppg_canvas.show()
 		self.ppg_canvas.get_tk_widget().grid(column=0, row=0, sticky = 'E' + 'W' + 'N' + 'S')
+
+		self.ppg_canvas = FigureCanvasTkAgg(self.ppg_R_fig, master=self.ppg_R_graph_frame)
+		#self.ppg_canvas.show()
+		self.ppg_canvas.get_tk_widget().grid(column=0, row=0, sticky = 'E' + 'W' + 'N' + 'S')
 		
 	#defines internal layout of vitals
 	def vitals_layout(self):
-
 		self.heartbeat_var = tk.IntVar() # initialize metric variables
 		self.SP02_var = tk.IntVar()
 		self.temp_var = tk.IntVar()
@@ -466,6 +496,8 @@ class heartbox_wave_viewer:
 		self.ecg_im.set_ydata(self.ecg_data[self.ecg_start_graph_index: self.n])
 		self.ppg_im.set_xdata(np.arange(self.ecg_start_graph_index, self.n))
 		self.ppg_im.set_ydata(self.ppg_data[self.ppg_start_graph_index: self.n])
+		self.ppg_R_im.set_xdata(np.arange(self.ppg_R_start_graph_index, self.n))
+		self.ppg_R_im.set_ydata(self.ppg_R_data[self.ppg_R_start_graph_index: self.n])
 
 		#self.heartbeat_var = np.random.randint(40, 60)
 		# self.SP02_var = np.random.randint(20, 30)
@@ -482,11 +514,13 @@ class heartbox_wave_viewer:
 		#in the case where we need to refresh the x axis
 		if ((self.n / self.repeat_length ) > self.frame_num):
 			self.frame_num = self.n / self.repeat_length
-			self.ppg_start_graph_index = self.n 
 			self.ecg_start_graph_index = self.n
+			self.ppg_start_graph_index = self.n 
+			self.ppg_R_start_graph_index = self.n
 
 			limX1 = self.ecg_ax.set_xlim(self.n, self.n + self.repeat_length)
 			limX2 = self.ppg_ax.set_xlim(self.n, self.n + self.repeat_length)
+			limX3 = self.ppg_R_ax.set_xlim(self.n, self.n + self.repeat_length)
 			#lim3 = self.ecg_ax.set_ylim([np.amin(self.ecg_data[self.n: self.n + self.repeat_length]), np.amax(self.ecg_data[self.n: self.n + self.repeat_length])])
 			#lim4 = self.ppg_ax.set_ylim([np.amin(self.ppg_data[self.n: self.n + self.repeat_length]), np.amax(self.ppg_data[self.n: self.n + self.repeat_length])])
 			
@@ -494,6 +528,8 @@ class heartbox_wave_viewer:
 			self.ecg_min = settings.large_value
 			self.ppg_max = settings.large_value_neg
 			self.ppg_min = settings.large_value
+			self.ppg_R_max = settings.large_value_neg
+			self.ppg_R_min = settings.large_value
 
 			if(self.ecg_data[self.n] > self.ecg_max):
 				self.ecg_max = self.ecg_data[self.n] + 500
@@ -503,12 +539,18 @@ class heartbox_wave_viewer:
 				self.ppg_max = self.ppg_data[self.n] + 500
 			elif(self.ppg_data[self.n] < self.ppg_min):
 				self.ppg_min = self.ppg_data[self.n] - 500
+			if(self.ppg_R_data[self.n] > self.ppg_R_max):
+				self.ppg_R_max = self.ppg_R_data[self.n] + 500
+			elif(self.ppg_R_data[self.n] < self.ppg_R_min):
+				self.ppg_R_min = self.ppg_R_data[self.n] - 500
 
 			limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
 			limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
+			limY3 = self.ppg_R_ax.set_ylim([self.ppg_R_min, self.ppg_R_max])
 
 			self.ecg_fig.canvas.draw()
 			self.ppg_fig.canvas.draw()
+			self.ppg_R_fig.canvas.draw()
 
 		#otherwise, we can plot efficiently since we don't need to change the viewing window
 		else:
@@ -550,6 +592,25 @@ class heartbox_wave_viewer:
 					self.ppg_ax.draw_artist(self.ppg_im)
 					self.ppg_fig.canvas.blit(self.ppg_ax.bbox)
 
+			if(self.ppg_R_max - self.ppg_R_min < 10000):
+				if(self.ppg_R_data[self.n] > self.ppg_R_max):
+					self.ppg_R_max = self.ppg_data[self.n] + 500
+					limY2 = self.ppg_R_ax.set_ylim([self.ppg_R_min, self.ppg_R_max])
+					self.ppg_R_fig.canvas.draw()
+
+				elif(self.ppg_R_data[self.n] < self.ppg_R_min):
+					self.ppg_R_min = self.ppg_R_data[self.n] - 500
+					limY2 = self.ppg_R_ax.set_ylim([self.ppg_R_min, self.ppg_R_max])
+					self.ppg_R_fig.canvas.draw()
+				else:
+					self.ppg_R_fig.canvas.restore_region(self.ppg_R_background)
+					self.ppg_R_ax.draw_artist(self.ppg_R_im)
+					self.ppg_R_fig.canvas.blit(self.ppg_R_ax.bbox)
+			else:
+					self.ppg_R_fig.canvas.restore_region(self.ppg_R_background)
+					self.ppg_R_ax.draw_artist(self.ppg_R_im)
+					self.ppg_R_fig.canvas.blit(self.ppg_R_ax.bbox)
+					
 	#graph renderer for live data
 	def read_live_samples(self):
 		#while(~q.empty()):
@@ -606,22 +667,31 @@ class heartbox_wave_viewer:
 			ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
 			ppg_height = self.ppg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
 
+			ppg_R_width = self.ppg_R_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
+			ppg_R_height = self.ppg_R_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
+
 			self.vitals_title_font.configure(size = self.vitals_title_font_size)
 			self.vitals_subtitle_font.configure(size = self.vitals_subtitle_font_size)
 			self.vitals_menubar_font.configure(size = self.vitals_menubar_font_size)
 			self.vitals_text_font.configure(size = self.vitals_text_font_size)
 			self.vitals_subtext_font.configure(size = self.vitals_subtext_font_size)
+
 			self.ecg_disconnect.set_size(20)
 			self.ppg_disconnect.set_size(20)
+			self.ppg_R_disconnect.set_size(20)
 
 		else:
 			ecg_width = float(self.ecg_fig.get_size_inches()[0]) * float(self.screen_width) / float(self.min_screen_width)
 			ecg_height = float(self.ecg_fig.get_size_inches()[1]) * float(self.screen_height) /  float(self.min_screen_height)
 			ppg_width = float(self.ppg_fig.get_size_inches()[0])* float(self.screen_width) /float(self.min_screen_width)
 			ppg_height = float(self.ppg_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
+			ppg_R_width = float(self.ppg_R_fig.get_size_inches()[0])* float(self.screen_width) /float(self.min_screen_width)
+			ppg_R_height = float(self.ppg_R_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
 			new_to_old_ratio = float(self.screen_width) / float(self.min_screen_width)
+
 			self.ecg_disconnect.set_size(20*new_to_old_ratio)
 			self.ppg_disconnect.set_size(20*new_to_old_ratio)
+			self.ppg_R_disconnect.set_size(20*new_to_old_ratio)
 
 			self.vitals_title_font.configure(size = int(self.vitals_title_font_size * new_to_old_ratio))
 			self.vitals_subtitle_font.configure(size = int(self.vitals_subtitle_font_size * new_to_old_ratio))
@@ -631,9 +701,11 @@ class heartbox_wave_viewer:
 
 		self.ecg_fig.set_size_inches(ecg_width, ecg_height)
 		self.ppg_fig.set_size_inches(ppg_width, ppg_height)
+		self.ppg_R_fig.set_size_inches(ppg_R_width, ppg_R_height)
 
 		self.ecg_fig.canvas.draw()
 		self.ppg_fig.canvas.draw()
+		self.ppg_R_fig.canvas.draw()
 
 		return "break"
 
@@ -647,7 +719,6 @@ class heartbox_wave_viewer:
 			self.ecg_disconnect_state = False
 
 		self.ecg_fig.canvas.draw()
-		self.ppg_fig.canvas.draw()
 
 	def toggle_ppg_disconnect(self):
 		if(not self.ppg_disconnect_state):
@@ -657,8 +728,17 @@ class heartbox_wave_viewer:
 			self.ppg_disconnect.set_text('')
 			self.ppg_disconnect_state = False
 
-		self.ecg_fig.canvas.draw()
 		self.ppg_fig.canvas.draw()
+
+	def toggle_ppg_disconnect(self):
+		if(not self.ppg_R_disconnect_state):
+			self.ppg_R_disconnect.set_text('---- DISCONNECTED ----')
+			self.ppg_R_disconnect_state = True
+		else:
+			self.ppg_R_disconnect.set_text('')
+			self.ppg_R_disconnect_state = False
+
+		self.ppg_R_fig.canvas.draw()
 
 	def end_fullscreen(self, event=None):
 		self.fullscreen_state = False
@@ -668,14 +748,23 @@ class heartbox_wave_viewer:
 		ecg_height = self.ecg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
 		ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
 		ppg_height = self.ppg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
+		ppg_R_width = self.ppg_R_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
+		ppg_R_height = self.ppg_R_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)		
+
 		self.ecg_fig.set_size_inches(ecg_width, ecg_height)
 		self.ppg_fig.set_size_inches(ppg_width, ppg_height)
+		self.ppg_R_fig.set_size_inches(ppg_R_width, ppg_R_height)
+
 		self.ecg_disconnect.set_size(20)
 		self.ppg_disconnect.set_size(20)
+		self.ppg_R_disconnect.set_size(20)
+
 		self.ecg_fig.canvas.draw()
 		self.ppg_fig.canvas.draw()
+		self.ppg_R_fig.canvas.draw()
 
 		return "break"
+
 
 if __name__ == "__main__":
 	graph_viewer = heartbox_wave_viewer()
