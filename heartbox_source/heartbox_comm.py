@@ -1,7 +1,9 @@
 import serial
 import settings
 import socket
-#from bluetooth import *
+from bluetooth import *
+import sys
+import pprint
 import pdb
 import time
 import pprint
@@ -44,37 +46,64 @@ def heartbox_udp_receive(q):
 	q.put('Q')
 
 def heartbox_bt_connect():
-	target_name = "PC36100"
-	target_address = None
+    target_name = "SCH-I545"
+    target_address = None
+    nearby_devices = discover_devices()
+    for bdaddr in nearby_devices:
+        if target_name == lookup_name( bdaddr ):
+            target_address = bdaddr
+            break
+    if target_address is not None:
+        print("found target bluetooth device with address ", target_address)
+    else:
+        print("could not find target bluetooth device nearby")
 
-	nearby_devices = discover_devices()
-	#pdb.set_trace()
-
-	for bdaddr in nearby_devices:
-		if target_name == lookup_name( bdaddr ):
-			target_address = bdaddr
-			break
-
-	if target_address is not None:
-		print "found target bluetooth device with address ", target_address
-		return 0
-	else:
-		print "could not find target bluetooth device nearby"
-		return 0
+    return target_address
 
 
-def heartbox_bt_send(packet):
-	target_address =  'AC:CF:85:28:E9:40'
-	service = find_service(address = target_address)
-	pp =  pprint.PrettyPrinter(indent=4)
-	pp.pprint(service)
+def heartbox_bt_send():
+	addr = '30:19:66:8E:01:3F'
 
-	client_socket = BluetoothSocket( RFCOMM )
-	client_socket.connect((target_address, 3))
-	while(1):
-		data = client_socket.send("hello")
-		print data
-	return 0
+	service_matches = find_service(address = addr)
+	#pp =  pprint.PrettyPrinter(indent=4)
+	#pp.pprint(service_matches)
+
+
+
+
+	# if len(service_matches) == 0:
+	#     print("couldn't find the SampleServer service =(")
+	#     sys.exit(0)
+
+
+	for service in service_matches:
+  		try:
+	   		if "HeartBox" in service["name"]:
+	   			port = service["port"]
+	   			name = service["name"]
+	   			host = service["host"]
+	   	except:
+			print("fail")
+
+
+	# first_match = service_matches[0]
+	# port = first_match["port"]
+	# name = first_match["name"]
+	# host = first_match["host"]
+
+	print("connecting to \"%s\" on %s" % (name, host))
+
+	# Create the client socket
+	sock=BluetoothSocket( RFCOMM )
+	sock.connect((host, port))
+
+	print("connected.  type stuff")
+	while True:
+		#data = input()
+		data = "1";
+		sock.send(data)
+
+	sock.close()
 
 def heartbox_bt_receive():
 	return 0
