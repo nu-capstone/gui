@@ -231,7 +231,7 @@ class heartbox_wave_viewer:
 		self.tools_button.menu= tk.Menu(self.tools_button, tearoff = 0,
 		 background = settings.back_color, fg= settings.font_color, font = self.vitals_menubar_font)
 		self.tools_button['menu'] = self.tools_button.menu
-		self.tools_button.menu.add_command(label="Option 1")
+		self.tools_button.menu.add_command(label="Set a register", command=self.config_register_window)
 		self.tools_button.menu.add_command(label="Option 2")
 		self.tools_button.menu.add_separator()
 		self.tools_button.menu.add_command(label="Option 3")
@@ -372,16 +372,16 @@ class heartbox_wave_viewer:
 		self.abnormal_frame.columnconfigure(1, weight = 2)
 		self.abnormal_frame.rowconfigure(1, weight = 1)
 
-		self.heartbeat_text = tk.Label(self.heartbeat_frame, text = "ECG HR", font = self.vitals_subtitle_font,
-			anchor = "w", fg=settings.font_color, bg = settings.back_color)
+		self.heartbeat_text = tk.Label(self.heartbeat_frame, text = "ECG HR", font = 
+			self.vitals_subtitle_font, anchor = "w", fg=settings.font_color, bg = settings.back_color)
 		self.SP02_text = tk.Label(self.SP02_frame, text = "SPO2 (%)", font = self.vitals_subtitle_font,
 			anchor ="w", fg=settings.font_color, bg = settings.back_color)
-		self.temp_text = tk.Label(self.temp_frame, text = "TEMP (" + settings.deg + "F)", font = self.vitals_subtitle_font,
-		 anchor ="w", fg=settings.font_color, bg = settings.back_color)
-		self.pulse_transit_text = tk.Label(self.pulse_transit_frame, text = "PULSE TT (MS)", font = self.vitals_subtitle_font,
-			anchor ="w",  fg=settings.font_color, bg = settings.back_color)
-		self.abnormal_text = tk.Label(self.abnormal_frame, text = "ABNORMAL HB", font = self.vitals_subtitle_font,
-			anchor ="w", fg=settings.font_color, bg = settings.back_color)
+		self.temp_text = tk.Label(self.temp_frame, text = "TEMP (" + settings.deg + "F)", 
+			font = self.vitals_subtitle_font, anchor ="w", fg=settings.font_color, bg = settings.back_color)
+		self.pulse_transit_text = tk.Label(self.pulse_transit_frame, text = "PULSE TT (MS)", 
+			font = self.vitals_subtitle_font, anchor ="w",  fg=settings.font_color, bg = settings.back_color)
+		self.abnormal_text = tk.Label(self.abnormal_frame, text = "ABNORMAL HB", 
+			font = self.vitals_subtitle_font, anchor ="w", fg=settings.font_color, bg = settings.back_color)
 
 		self.heartbeat_label = tk.Label(self.heartbeat_frame, text = self.heartbeat_var, font = self.vitals_text_font,
 			fg=settings.font_color, bg = settings.back_color)
@@ -389,8 +389,8 @@ class heartbox_wave_viewer:
 			anchor ="w", fg=settings.font_color, bg = settings.back_color)
 		self.temp_label = tk.Label(self.temp_frame, text = self.temp_var, font = self.vitals_text_font,
 			anchor ="w", fg=settings.font_color, bg = settings.back_color)
-		self.pulse_transit_label = tk.Label(self.pulse_transit_frame, text = self.pulse_transit_var, font = self.vitals_text_font,
-			anchor ="w", fg=settings.font_color, bg = settings.back_color)
+		self.pulse_transit_label = tk.Label(self.pulse_transit_frame, text = self.pulse_transit_var, 
+			font = self.vitals_text_font, anchor ="w", fg=settings.font_color, bg = settings.back_color)
 		self.abnormal_label = tk.Label(self.abnormal_frame, text = self.abnormal_var, font = self.vitals_text_font,
 		    anchor ="w", fg=settings.font_color, bg = settings.back_color)
 
@@ -416,25 +416,25 @@ class heartbox_wave_viewer:
 		self.frame_temp_min_max.grid(row = 1, column = 2)
 		self.frame_ptt_min_max.grid(row = 1, column = 2)
 
-		self.heartbeat_min_label = tk.Label(self.frame_heartbeat_min_max, text = "MIN:", font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
-		self.heartbeat_max_label = tk.Label(self.frame_heartbeat_min_max, text = "MAX:", font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
+		self.heartbeat_min_label = tk.Label(self.frame_heartbeat_min_max, text = "MIN:", 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+		self.heartbeat_max_label = tk.Label(self.frame_heartbeat_min_max, text = "MAX:", 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
-		self.SP02_min_label = tk.Label(self.frame_SP02_min_max, text = "MIN:", font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
-		self.SP02_max_label = tk.Label(self.frame_SP02_min_max, text = "MAX:", font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
+		self.SP02_min_label = tk.Label(self.frame_SP02_min_max, text = "MIN:",
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+		self.SP02_max_label = tk.Label(self.frame_SP02_min_max, text = "MAX:", 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
-		self.temp_min_label = tk.Label(self.frame_temp_min_max, text = "MIN:", font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
-		self.temp_max_label = tk.Label(self.frame_temp_min_max, text = "MAX:", font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
+		self.temp_min_label = tk.Label(self.frame_temp_min_max, text = "MIN:", 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+		self.temp_max_label = tk.Label(self.frame_temp_min_max, text = "MAX:", 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
-		self.ptt_min_label = tk.Label(self.frame_ptt_min_max, text = "MIN:", font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
-		self.ptt_max_label = tk.Label(self.frame_ptt_min_max, text = "MAX:", font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
+		self.ptt_min_label = tk.Label(self.frame_ptt_min_max, text = "MIN:", 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+		self.ptt_max_label = tk.Label(self.frame_ptt_min_max, text = "MAX:", 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
 		self.heartbeat_min_label.grid(row = 0, column = 0, sticky = "W")
 		self.heartbeat_max_label.grid(row = 1, column = 0, sticky = "W")
@@ -448,25 +448,25 @@ class heartbox_wave_viewer:
 		self.ptt_min_label.grid(row = 0, column = 0, sticky = "W")
 		self.ptt_max_label.grid(row = 1, column = 0, sticky = "W")
 
-		self.heartbeat_min_value = tk.Label(self.frame_heartbeat_min_max, text = self.heartbeat_var_min, font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
-		self.heartbeat_max_value = tk.Label(self.frame_heartbeat_min_max, text = self.heartbeat_var_max, font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
+		self.heartbeat_min_value = tk.Label(self.frame_heartbeat_min_max, text = self.heartbeat_var_min, 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+		self.heartbeat_max_value = tk.Label(self.frame_heartbeat_min_max, text = self.heartbeat_var_max, 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
-		self.SP02_min_value = tk.Label(self.frame_SP02_min_max, text = self.SP02_var_min, font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
-		self.SP02_max_value= tk.Label(self.frame_SP02_min_max, text = self.SP02_var_max, font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
+		self.SP02_min_value = tk.Label(self.frame_SP02_min_max, text = self.SP02_var_min, 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+		self.SP02_max_value= tk.Label(self.frame_SP02_min_max, text = self.SP02_var_max, 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
-		self.temp_min_value= tk.Label(self.frame_temp_min_max, text = self.temp_var_min, font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
-		self.temp_max_value = tk.Label(self.frame_temp_min_max, text = self.temp_var_max, font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
+		self.temp_min_value= tk.Label(self.frame_temp_min_max, text = self.temp_var_min, 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+		self.temp_max_value = tk.Label(self.frame_temp_min_max, text = self.temp_var_max, 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
-		self.ptt_min_value = tk.Label(self.frame_ptt_min_max, text = self.ptt_var_min, font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
-		self.ptt_max_value = tk.Label(self.frame_ptt_min_max, text = self.ptt_var_max, font = self.vitals_subtext_font, 
-			fg=settings.font_color, bg = settings.back_color)
+		self.ptt_min_value = tk.Label(self.frame_ptt_min_max, text = self.ptt_var_min, font = 
+			self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+		self.ptt_max_value = tk.Label(self.frame_ptt_min_max, text = self.ptt_var_max, 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
 		self.heartbeat_min_value.grid(row = 0, column = 1)
 		self.heartbeat_max_value.grid(row = 1, column = 1)
@@ -519,9 +519,7 @@ class heartbox_wave_viewer:
 			limX1 = self.ecg_ax.set_xlim(self.n, self.n + self.repeat_length)
 			limX2 = self.ppg_ax.set_xlim(self.n, self.n + self.repeat_length)
 			limX3 = self.ppg_R_ax.set_xlim(self.n, self.n + self.repeat_length)
-			#lim3 = self.ecg_ax.set_ylim([np.amin(self.ecg_data[self.n: self.n + self.repeat_length]), np.amax(self.ecg_data[self.n: self.n + self.repeat_length])])
-			#lim4 = self.ppg_ax.set_ylim([np.amin(self.ppg_data[self.n: self.n + self.repeat_length]), np.amax(self.ppg_data[self.n: self.n + self.repeat_length])])
-			
+
 			self.ecg_max = settings.large_value_neg
 			self.ecg_min = settings.large_value
 			self.ppg_max = settings.large_value_neg
@@ -642,21 +640,6 @@ class heartbox_wave_viewer:
 		self.root.bind("<F11>", self.toggle_fullscreen)
 		self.root.bind("<Escape>", self.end_fullscreen)
 
-	def connect_heartbox(self):
-		self.heartbox_connect_state = True
-		if(self.ecg_disconnect_state):
-			self.toggle_ecg_disconnect()
-			self.toggle_ppg_disconnect()
-		self.startup()
-
-	def disconnect_heartbox(self):
-		self.heartbox_connect_state = False
-		if(not self.ecg_disconnect_state):
-			self.toggle_ecg_disconnect()
-			self.toggle_ppg_disconnect()
-		if(not self.android_connect_state):
-			self.disconnect_bt_android()
-
 	def toggle_fullscreen(self, event=None):
 		self.fullscreen_state = not self.fullscreen_state  # Just toggling the boolean
 		self.root.attributes("-fullscreen", self.fullscreen_state)
@@ -709,6 +692,46 @@ class heartbox_wave_viewer:
 
 		return "break"
 
+	def end_fullscreen(self, event=None):
+		self.fullscreen_state = False
+		self.root.attributes("-fullscreen", False)
+
+		ecg_width = self.ecg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width) 
+		ecg_height = self.ecg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
+		ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
+		ppg_height = self.ppg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
+		ppg_R_width = self.ppg_R_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
+		ppg_R_height = self.ppg_R_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)		
+
+		self.ecg_fig.set_size_inches(ecg_width, ecg_height)
+		self.ppg_fig.set_size_inches(ppg_width, ppg_height)
+		self.ppg_R_fig.set_size_inches(ppg_R_width, ppg_R_height)
+
+		self.ecg_disconnect.set_size(20)
+		self.ppg_disconnect.set_size(20)
+		self.ppg_R_disconnect.set_size(20)
+
+		self.ecg_fig.canvas.draw()
+		self.ppg_fig.canvas.draw()
+		self.ppg_R_fig.canvas.draw()
+
+		return "break"
+
+	def connect_heartbox(self):
+		self.heartbox_connect_state = True
+		if(self.ecg_disconnect_state):
+			self.toggle_ecg_disconnect()
+			self.toggle_ppg_disconnect()
+		self.startup()
+
+	def disconnect_heartbox(self):
+		self.heartbox_connect_state = False
+		if(not self.ecg_disconnect_state):
+			self.toggle_ecg_disconnect()
+			self.toggle_ppg_disconnect()
+		if(not self.android_connect_state):
+			self.disconnect_bt_android()
+
 	def toggle_ecg_disconnect(self):
 		if(not self.ecg_disconnect_state):
 			self.ecg_disconnect.set_text('---- DISCONNECTED ----')
@@ -750,30 +773,35 @@ class heartbox_wave_viewer:
 		if(not self.android_connect_state):
 			heartbox_comm.heartbox_bt_disconnect()
 
-	def end_fullscreen(self, event=None):
-		self.fullscreen_state = False
-		self.root.attributes("-fullscreen", False)
+	def config_register_window(self):
+		popup_register = tk.Toplevel()
+		self.result = tk.StringVar()
+		popup_register.configure(bg = settings.back_color)
+		popup_register.attributes("-toolwindow", 1) 
 
-		ecg_width = self.ecg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width) 
-		ecg_height = self.ecg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
-		ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
-		ppg_height = self.ppg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
-		ppg_R_width = self.ppg_R_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
-		ppg_R_height = self.ppg_R_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)		
+		register_field_label = tk.Label(popup_register, text="Enter a Register Setting",
+		  font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color)
+		self.register_field = tk.Entry(popup_register, textvariable = self.result, font = self.vitals_menubar_font,
+			fg= settings.font_color, bg = settings.back_color)
+		register_field_button = tk.Button(popup_register, text = "Enter", font = self.vitals_menubar_font,
+		 command = self.send_register_changes, fg= settings.font_color, bg = settings.back_color)
 
-		self.ecg_fig.set_size_inches(ecg_width, ecg_height)
-		self.ppg_fig.set_size_inches(ppg_width, ppg_height)
-		self.ppg_R_fig.set_size_inches(ppg_R_width, ppg_R_height)
+		register_field_label.grid(row = 0, column = 0)
+		self.register_field.grid(row = 0, column = 1)
+		register_field_button.grid(row = 0, column = 2)
 
-		self.ecg_disconnect.set_size(20)
-		self.ppg_disconnect.set_size(20)
-		self.ppg_R_disconnect.set_size(20)
+	def send_register_changes(self):
+		self.register_field.get()
 
-		self.ecg_fig.canvas.draw()
-		self.ppg_fig.canvas.draw()
-		self.ppg_R_fig.canvas.draw()
-
-		return "break"
+		if(self.heartbox_connect_state):
+			heartbox_comm.heartbox_uart_conf_reg(self.result)
+		else:
+			popup_error = tk.Toplevel()
+			popup_error.configure(bg = settings.back_color)
+			popup_error.attributes("-toolwindow", 1) 
+			error_label = tk.Label(popup_error, text="ERROR: Connect to HeartBox",
+				font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color)
+			error_label.grid(row = 0, column = 0)
 
 if __name__ == "__main__":
 	graph_viewer = heartbox_wave_viewer()

@@ -1,45 +1,114 @@
 import serial
 import settings
 import socket
-from bluetooth import *
+#from bluetooth import *
 import sys
-import pprint
 import pdb
 import time
-import pprint
+import string
 
 addr = ''
 port = ''
 host = ''
-sock = BluetoothSocket( RFCOMM )
+#sock = BluetoothSocket( RFCOMM )
 
+def heartbox_uart_conf_register(text):
+	ser = serial.Serial('COM3', baudrate = 460800, timeout = 3)
+
+	if(ser.isOpen() == False):
+		ser.open()
+
+	ser.write(text + '\n')
+	ser.close()
 
 def heartbox_uart_receive(q):
-	ser = serial.Serial()
-	ser.baudrate = 460800
-	ser.open()
-	s = ser.read()
+	ser = serial.Serial('COM3', baudrate = 460800, timeout = 3)
+	
+	#import pdb; pdb.set_trace()
+	if(ser.isOpen() == False):
+		ser.open()
+
+	ser.write('s0\r\n')
+	ser.readline()
+
+	ser.write('s0\n')
+	ser.readline()
+
+	print ser
+	# asdfasdf
+
+	filename = "PPG and ECG Demo 091917.dcfg"
+
+	with open(filename) as inputfile:
+		for line in inputfile:
+			s = line[0:2]
+			if(all(c in string.hexdigits for c in s)):
+				addr = line[0:2]
+				data = line[3:7]
+
+				print(addr, data)
+
+				ser.write('w ' + addr + ' ' + data + '\n')
+				ser.readline()
+				ser.readline()
+				print ser.readline()
+
+	#ser.write('w 12 3D\n') # sample rate 130
+	#ser.readline()
+	#ser.readline()
+	#ser.readline()
+
+	ser.write('w 36 0290\n') # 1 pulse timeslot B
+	ser.readline()
+	ser.readline()
+	ser.readline()
+
+	#ser.write('w 44 1C26\n') # reduce gain to 25k
+	#ser.readline()
+	#ser.readline()
+	#ser.readline()
+
+	print("got here")
+
+	time.sleep(1)
+
+	ser.write('t c c\n')
+	ser.readline()
+
+	time.sleep(1)
+
+	ser.write('s1\r\n')
+	ser.readline()
+	
+	ser.write('s1\n')
 
 	while True:
 			#time.sleep(1)
-		data, addr = ser.read(22)
+		data = ser.readline()
 		#ser.write(b'r a')
-		#print(s)
+		
+		try:
+			if(data[1] == "#"):
+				q.put(data)
 
-		settings.q.put(data)
+		except:
+			print data
+			print("HI")
+			#print(data)
+
 	ser.close()
-	settings.q.put('Q')
+	q.put('Q')
 
 def heartbox_uart_send():
 	return 0
 
 def heartbox_udp_receive(q):
-	upd_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
-	upd_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	upd_sock.bind((settings.UDP_IP, settings.UDP_PORT))
+	udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
+	udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	udp_sock.bind((settings.UDP_IP, settings.UDP_PORT))
 	while True:
 			#time.sleep(1)
-		data, addr = upd_sock.recvfrom(100)
+		data, addr = udp_sock.recvfrom(100)
 		#sample = int(data[26:34],16);
 		#print data + '\n'
 		#time.sleep()
@@ -48,7 +117,7 @@ def heartbox_udp_receive(q):
 				#here send any data you want to send to the other process, can be any pickable object
 		q.put(data)
 		#print settings.q.get()
-	upd_sock.close()
+	udp_sock.close()
 	q.put('Q')
 
 def heartbox_bt_connect():
