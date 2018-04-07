@@ -18,6 +18,7 @@ import time
 import settings
 from heartbox_dsp import heartbox_dsp
 import heartbox_comm
+from struct import *
 #displays waveform/metric monitor to be viewed by users
 
 class heartbox_wave_viewer:
@@ -43,6 +44,7 @@ class heartbox_wave_viewer:
 		self.ecg_disconnect_state =True
 		self.ppg_disconnect_state = True
 		self.ppg_R_disconnect_state = True
+		self.android_connect_state= False
 
 		self.vitals_title_font_size = 14 #default values for 1200x700 font
 		self.vitals_subtitle_font_size = 14
@@ -115,7 +117,6 @@ class heartbox_wave_viewer:
 		self.ppg_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
 		self.ppg_R_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
 
-
 		self.ecg_ax.xaxis.label.set_color(settings.grid_color)
 		self.ecg_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
 		self.ecg_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
@@ -123,7 +124,6 @@ class heartbox_wave_viewer:
 		self.ppg_ax.xaxis.label.set_color(settings.grid_color)
 		self.ppg_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
 		self.ppg_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
-
 
 		self.ppg_R_ax.xaxis.label.set_color(settings.grid_color)
 		self.ppg_R_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
@@ -206,9 +206,9 @@ class heartbox_wave_viewer:
 		self.file_button.menu.add_command(label="Connect HeartBox", command=self.connect_heartbox)
 		self.file_button.menu.add_command(label="Disconnect HeartBox", command= self.disconnect_heartbox)
 		self.file_button.menu.add_separator()
-		self.file_button.menu.add_command(label="Option 1")
+		self.file_button.menu.add_command(label="Connect Android Bluetooth", command=self.connect_bt_android)
+		self.file_button.menu.add_command(label="Disconnect Android Bluetooth", command=self.disconnect_bt_android)
 		self.file_button.menu.add_separator()
-		self.file_button.menu.add_command(label="Option 2")
 		self.file_button.menu.add_command(label="Option 3")
 		self.file_button.menu.add_command(label="Option 4")
 		self.file_button.menu.add_separator()
@@ -421,12 +421,10 @@ class heartbox_wave_viewer:
 		self.heartbeat_max_label = tk.Label(self.frame_heartbeat_min_max, text = "MAX:", font = self.vitals_subtext_font, 
 			fg=settings.font_color, bg = settings.back_color)
 
-
 		self.SP02_min_label = tk.Label(self.frame_SP02_min_max, text = "MIN:", font = self.vitals_subtext_font, 
 			fg=settings.font_color, bg = settings.back_color)
 		self.SP02_max_label = tk.Label(self.frame_SP02_min_max, text = "MAX:", font = self.vitals_subtext_font, 
 			fg=settings.font_color, bg = settings.back_color)
-
 
 		self.temp_min_label = tk.Label(self.frame_temp_min_max, text = "MIN:", font = self.vitals_subtext_font, 
 			fg=settings.font_color, bg = settings.back_color)
@@ -610,7 +608,7 @@ class heartbox_wave_viewer:
 					self.ppg_R_fig.canvas.restore_region(self.ppg_R_background)
 					self.ppg_R_ax.draw_artist(self.ppg_R_im)
 					self.ppg_R_fig.canvas.blit(self.ppg_R_ax.bbox)
-					
+
 	#graph renderer for live data
 	def read_live_samples(self):
 		#while(~q.empty()):
@@ -620,6 +618,9 @@ class heartbox_wave_viewer:
 				#print 'X'
 				filtered_ppg = filtered_data[0,:]
 				filtered_ecg = filtered_data[1,:]
+				if(self.android_disconnect_state):
+					heartbox_comm.heartbox_bt_send(pack('ff', filtered_ecg, filtered_ppg))
+
 				self.heartbox_var = self.dsp.calc_heartrate()
 				self.ppg_data = np.append(self.ppg_data, filtered_ppg)
 				self.ecg_data = np.append(self.ecg_data, filtered_ecg)
@@ -629,11 +630,8 @@ class heartbox_wave_viewer:
 				self.update_viewer()
 				self.root.after(0, self.read_live_samples)
 				self.n = self.n + 1
-			elif (filtered_data == 'Q'):
+			elif (filtered_data == 'Q' or filtered_data == 'B'):
 				#print 'R'
-				self.root.after(0, self.read_live_samples)
-			elif (filtered_data == 'B'):
-				#print 'B'
 				self.root.after(0, self.read_live_samples)
 		else:
 			self.ppg_disconnect.set_text('---- DISCONNECTED ----')
@@ -656,6 +654,8 @@ class heartbox_wave_viewer:
 		if(not self.ecg_disconnect_state):
 			self.toggle_ecg_disconnect()
 			self.toggle_ppg_disconnect()
+		if(not self.android_connect_state):
+			self.disconnect_bt_android()
 
 	def toggle_fullscreen(self, event=None):
 		self.fullscreen_state = not self.fullscreen_state  # Just toggling the boolean
@@ -740,6 +740,16 @@ class heartbox_wave_viewer:
 
 		self.ppg_R_fig.canvas.draw()
 
+	def connect_bt_android(self):
+		self.android_connect_state = True
+		if(self.android_connect_state):
+			heartbox_comm.heartbox_bt_connect()
+
+	def disconnect_bt_android(self):
+		self.android_connect_state= False
+		if(not self.android_connect_state):
+			heartbox_comm.heartbox_bt_disconnect()
+
 	def end_fullscreen(self, event=None):
 		self.fullscreen_state = False
 		self.root.attributes("-fullscreen", False)
@@ -764,7 +774,6 @@ class heartbox_wave_viewer:
 		self.ppg_R_fig.canvas.draw()
 
 		return "break"
-
 
 if __name__ == "__main__":
 	graph_viewer = heartbox_wave_viewer()
