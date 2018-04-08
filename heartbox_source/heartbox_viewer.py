@@ -1,3 +1,7 @@
+import settings
+from heartbox_dsp import heartbox_dsp
+import heartbox_comm
+from ppg_highlevel import ppg_highlevel
 import Tkinter as tk 
 from PIL import Image, ImageTk
 import tkFont
@@ -6,19 +10,17 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pylab as plt
 import matplotlib.animation as animation
 import matplotlib
+import webbrowser
 
 import numpy as np
 from scipy import signal
-import pdb
 
 import multiprocessing
 import socket
 import time
-
-import settings
-from heartbox_dsp import heartbox_dsp
-import heartbox_comm
 from struct import *
+import subprocess
+import pdb
 #displays waveform/metric monitor to be viewed by users
 
 class heartbox_wave_viewer:
@@ -64,7 +66,6 @@ class heartbox_wave_viewer:
 		self.menu_layout()
 		self.graph_layout()
 		self.vitals_layout()
-
 		#heartbox_comm.heartbox_bt_send('HELLO')
 
 	def startup(self):
@@ -173,20 +174,21 @@ class heartbox_wave_viewer:
 		self.root.iconbitmap(default=settings.ICON_PATH)
 
 		#holds all widgets in menubar
-		self.menu_frame = tk.Frame(self.root, bg = settings.back_color, highlightbackground = settings.grid_color)
+		self.menu_frame = tk.Frame(self.root, bg = settings.back_color, 
+			highlightbackground = settings.grid_color)
 		self.menu_frame.grid(row = 0, column = 0, columnspan = 2)
 		
 		#instantiates buttons for main menubar
-		self.file_button = tk.Menubutton(self.menu_frame, text="FILE", font = self.vitals_menubar_font,
-			fg= settings.font_color, bg = settings.back_color)
-		self.view_button = tk.Menubutton(self.menu_frame, text="VIEW", font = self.vitals_menubar_font,
-			fg= settings.font_color, bg = settings.back_color) 
-		self.tools_button = tk.Menubutton(self.menu_frame, text="TOOLS", font = self.vitals_menubar_font,
-			fg= settings.font_color, bg = settings.back_color) 
-		self.help_button = tk.Menubutton(self.menu_frame, text="HELP", font = self.vitals_menubar_font,
-			fg= settings.font_color, bg = settings.back_color) 
-		self.spacer_menu = tk.Label(self.menu_frame, text=settings.spacer_text, font = self.vitals_menubar_font,
-			fg= settings.font_color, bg = settings.back_color) 
+		self.file_button = tk.Menubutton(self.menu_frame, text="FILE", 
+			font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color)
+		self.view_button = tk.Menubutton(self.menu_frame, text="VIEW",
+			font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color) 
+		self.tools_button = tk.Menubutton(self.menu_frame, text="TOOLS", 
+			font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color) 
+		self.help_button = tk.Menubutton(self.menu_frame, text="HELP", 
+			font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color) 
+		self.spacer_menu = tk.Label(self.menu_frame, text=settings.spacer_text, 
+			font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color) 
 				
 		self.file_button.grid(row = 0, column = 0)
 		self.view_button.grid(row = 0, column = 1)
@@ -232,7 +234,7 @@ class heartbox_wave_viewer:
 		 background = settings.back_color, fg= settings.font_color, font = self.vitals_menubar_font)
 		self.tools_button['menu'] = self.tools_button.menu
 		self.tools_button.menu.add_command(label="Set a register", command=self.config_register_window)
-		self.tools_button.menu.add_command(label="Option 2")
+		self.tools_button.menu.add_command(label="Open high-level register config", command=self.create_ppg_highlevel)
 		self.tools_button.menu.add_separator()
 		self.tools_button.menu.add_command(label="Option 3")
 		self.tools_button.menu.add_separator()
@@ -245,7 +247,7 @@ class heartbox_wave_viewer:
 		self.help_button.menu= tk.Menu(self.help_button, tearoff = 0, 
 			background = settings.back_color, fg= settings.font_color, font = self.vitals_menubar_font)
 		self.help_button['menu'] = self.help_button.menu
-		self.help_button.menu.add_command(label="Option 1")
+		self.help_button.menu.add_command(label="Open ADPD Documentation", command=self.open_adpd103_docs)
 		self.help_button.menu.add_command(label="Option 2")
 		self.help_button.menu.add_separator()
 		self.help_button.menu.add_command(label="Option 3")
@@ -781,8 +783,8 @@ class heartbox_wave_viewer:
 
 		register_field_label = tk.Label(popup_register, text="Enter a Register Setting",
 		  font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color)
-		self.register_field = tk.Entry(popup_register, textvariable = self.result, font = self.vitals_menubar_font,
-			fg= settings.font_color, bg = settings.back_color)
+		self.register_field = tk.Entry(popup_register, textvariable = self.result, 
+			font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color)
 		register_field_button = tk.Button(popup_register, text = "Enter", font = self.vitals_menubar_font,
 		 command = self.send_register_changes, fg= settings.font_color, bg = settings.back_color)
 
@@ -802,6 +804,12 @@ class heartbox_wave_viewer:
 			error_label = tk.Label(popup_error, text="ERROR: Connect to HeartBox",
 				font = self.vitals_menubar_font, fg= settings.font_color, bg = settings.back_color)
 			error_label.grid(row = 0, column = 0)
+
+	def open_adpd103_docs(self):
+		subprocess.Popen(['ADI_Tech_Spec.pdf'],shell=True)
+
+	def create_ppg_highlevel(self):
+		ppg_highlevel()
 
 if __name__ == "__main__":
 	graph_viewer = heartbox_wave_viewer()
