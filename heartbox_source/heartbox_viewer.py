@@ -46,6 +46,7 @@ class heartbox_wave_viewer:
 		self.ecg_disconnect_state =True
 		self.ppg_disconnect_state = True
 		self.ppg_R_disconnect_state = True
+		self.ppg_IR_disconnect_state = True
 		self.android_connect_state= False
 
 		self.vitals_title_font_size = 14 #default values for 1200x700 font
@@ -66,10 +67,8 @@ class heartbox_wave_viewer:
 		self.menu_layout()
 		self.graph_layout()
 		self.vitals_layout()
-		#heartbox_comm.heartbox_bt_send('HELLO')
 
 	def startup(self):
-		#for offline viewing, reads data from csv
 		if (settings.isComm):
 			self.simulate=multiprocessing.Process(None,heartbox_comm.heartbox_udp_receive,args=(settings.q,))
 			self.simulate.start()
@@ -82,6 +81,9 @@ class heartbox_wave_viewer:
 		if (settings.isComm):
 			self.ecg_data = np.array([])
 			self.ppg_data = np.array([])
+			self.ppg_R_data = np.array([])
+			self.ppg_IR_data = np.array([])
+
 		else:
 			self.ecg_data = np.genfromtxt('ecg.csv', delimiter = ',')
 			self.ppg_data = np.genfromtxt('ppg.csv', delimiter = ',')
@@ -90,14 +92,17 @@ class heartbox_wave_viewer:
 		self.ecg_fig = plt.figure()
 		self.ppg_fig = plt.figure()
 		self.ppg_R_fig = plt.figure()
-
-		self.ecg_fig.set_size_inches(8,2.5)
-		self.ppg_fig.set_size_inches(8,2.5)
-		self.ppg_R_fig.set_size_inches(8,2.5)
+		self.ppg_IR_fig = plt.figure()
+		self.ecg_fig.set_size_inches(7,2.5)
+		self.ppg_fig.set_size_inches(7,2.5)
+		self.ppg_R_fig.set_size_inches(4,2.5)
+		self.ppg_IR_fig.set_size_inches(4,2.5)
 
 		self.ecg_ax = self.ecg_fig.add_subplot(1,1,1)
 		self.ppg_ax = self.ppg_fig.add_subplot(1,1,1)
 		self.ppg_R_ax = self.ppg_R_fig.add_subplot(1,1,1)
+		self.ppg_IR_ax = self.ppg_IR_fig.add_subplot(1,1,1)
+		plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
 
 		self.ecg_ax.locator_params(axis='y', nbins =2)
 		self.ecg_ax.locator_params(axis='x', nbins =2)
@@ -105,21 +110,27 @@ class heartbox_wave_viewer:
 		self.ppg_ax.locator_params(axis='x', nbins =2)
 		self.ppg_R_ax.locator_params(axis='y', nbins =2)
 		self.ppg_R_ax.locator_params(axis='x', nbins =2)
+		self.ppg_IR_ax.locator_params(axis='y', nbins =2)
+		self.ppg_IR_ax.locator_params(axis='x', nbins =2)
 
 		self.ecg_fig.set_facecolor(settings.back_color) #colors the area surround figs
 		self.ppg_fig.set_facecolor(settings.back_color)
 		self.ppg_R_fig.set_facecolor(settings.back_color)
+		self.ppg_IR_fig.set_facecolor(settings.back_color)
 
 		self.ecg_ax.set_facecolor(settings.back_color) #colors the internal figure area/axes
 		self.ppg_ax.set_facecolor(settings.back_color)
 		self.ppg_R_ax.set_facecolor(settings.back_color)
+		self.ppg_IR_ax.set_facecolor(settings.back_color)
 
 		self.ecg_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
 		self.ppg_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
 		self.ppg_R_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
+		self.ppg_IR_ax.grid(color = settings.grid_color, linestyle='--', linewidth = 0.25)
 
 		self.ecg_ax.xaxis.label.set_color(settings.grid_color)
 		self.ecg_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
+		self.ecg_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
 		self.ecg_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
 
 		self.ppg_ax.xaxis.label.set_color(settings.grid_color)
@@ -130,36 +141,50 @@ class heartbox_wave_viewer:
 		self.ppg_R_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
 		self.ppg_R_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
 
+		self.ppg_IR_ax.xaxis.label.set_color(settings.grid_color)
+		self.ppg_IR_ax.tick_params(axis='x', colors=settings.grid_color, width  = 0.5, labelsize = 8)
+		self.ppg_IR_ax.tick_params(axis='y', colors=settings.grid_color, width  = 0.5, labelsize = 8)
+		
 		#set up viewing window (in this case the 25 most recent values)
-		#self.repeat_length = (np.shape(self.ecg_data)[0]+1)/10
 		self.repeat_length = 500
+		self.repeat_length_split = self.repeat_length
+
 		self.ecg_ax.set_xlim([0,self.repeat_length])
 		self.ppg_ax.set_xlim([0,self.repeat_length])
-		self.ppg_R_ax.set_xlim([0,self.repeat_length])
+		self.ppg_R_ax.set_xlim([0,self.repeat_length_split])
+		self.ppg_IR_ax.set_xlim([0,self.repeat_length_split])
 
 		self.ecg_ax.set_ylim([-1,1])
 		self.ppg_ax.set_ylim([-1,1])
 		self.ppg_R_ax.set_ylim([-1,1])
+		self.ppg_IR_ax.set_ylim([-1,1])
 
 		self.ecg_im, = self.ecg_ax.plot([], [], color=(0,0,1))
 		self.ppg_im, = self.ppg_ax.plot([], [], color=(1,0,1))
-		self.ppg_R_im, = self.ppg_R_ax.plot([], [], color=(1,0,1))
+		self.ppg_R_im, = self.ppg_R_ax.plot([], [], color=(1,1,0))
+		self.ppg_IR_im, = self.ppg_IR_ax.plot([], [], color=(1,1,1))
 
 		self.n = 0
+
 		self.ecg_max = 1 #initializes max/min for y-axes to scale with data
 		self.ecg_min = -1
 		self.ppg_max = 1
 		self.ppg_min = -1	
 		self.ppg_R_max = 1
 		self.ppg_R_min = -1	
+		self.ppg_IR_max = 1
+		self.ppg_IR_min = -1	
+
 		self.ecg_start_graph_index = 0
 		self.ppg_start_graph_index = 0
 		self.ppg_R_start_graph_index = 0
+		self.ppg_IR_start_graph_index = 0	
 
 		self.ecg_background = self.ecg_fig.canvas.copy_from_bbox(self.ecg_ax.bbox)
 		self.ppg_background = self.ppg_fig.canvas.copy_from_bbox(self.ppg_ax.bbox)
 		self.ppg_R_background = self.ppg_R_fig.canvas.copy_from_bbox(self.ppg_R_ax.bbox)
-		
+		self.ppg_IR_background = self.ppg_IR_fig.canvas.copy_from_bbox(self.ppg_IR_ax.bbox)
+
 		self.ecg_disconnect = self.ecg_ax.text(0.5, 0.5,'---- DISCONNECTED ----', size=20, 
 			ha = 'center', va = 'center', transform=self.ecg_ax.transAxes, color=settings.graph_color)
 
@@ -169,6 +194,8 @@ class heartbox_wave_viewer:
 		self.ppg_R_disconnect = self.ppg_R_ax.text(0.5, 0.5,'---- DISCONNECTED ----', size=20, 
 			ha = 'center', va = 'center', transform=self.ppg_R_ax.transAxes, color=settings.graph_color)
 
+		self.ppg_IR_disconnect = self.ppg_IR_ax.text(0.5, 0.5,'---- DISCONNECTED ----', size=20, 
+			ha = 'center', va = 'center', transform=self.ppg_IR_ax.transAxes, color=settings.graph_color)
 		#defines internal layout of menubar
 	def menu_layout(self):
 		self.root.iconbitmap(default=settings.ICON_PATH)
@@ -280,11 +307,24 @@ class heartbox_wave_viewer:
 		self.ppg_graph_frame.columnconfigure(0, weight = 1)
 		self.ppg_graph_frame.rowconfigure(0, weight = 1)
 
-		self.ppg_R_graph_frame = tk.LabelFrame(self.all_graph_frame, bd = 1, text = "PPG_R",
+		self.ppg_R_IR_graph_frame = tk.Frame(self.all_graph_frame, bg = settings.back_color)
+		self.ppg_R_IR_graph_frame.grid(column = 0, row = 2, sticky = 'E' + 'W' + 'N' + 'S')
+		self.ppg_R_IR_graph_frame.rowconfigure(0, weight = 1)
+		self.ppg_R_IR_graph_frame.columnconfigure(0, weight = 1)		
+		self.ppg_R_IR_graph_frame.columnconfigure(1, weight = 1)
+
+		self.ppg_R_graph_frame = tk.LabelFrame(self.ppg_R_IR_graph_frame, bd = 1, text = "PPG_R",
 			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
-		self.ppg_R_graph_frame.grid(column = 0, row = 2, sticky = 'E' + 'W' + 'N' + 'S')
+		self.ppg_R_graph_frame.grid(column = 0, row = 0, sticky = 'E' + 'W' + 'N' + 'S')
 		self.ppg_R_graph_frame.columnconfigure(0, weight = 1)
 		self.ppg_R_graph_frame.rowconfigure(0, weight = 1)
+
+		self.ppg_IR_graph_frame = tk.LabelFrame(self.ppg_R_IR_graph_frame, bd = 1, text = "PPG_IR",
+			fg=settings.font_color, bg = settings.back_color, font = self.vitals_title_font)
+		self.ppg_IR_graph_frame.grid(column = 1, row = 0, sticky = 'E' + 'W' + 'N' + 'S')
+		self.ppg_IR_graph_frame.columnconfigure(0, weight = 1)
+		self.ppg_IR_graph_frame.rowconfigure(0, weight = 1)
+		plt.tight_layout()
 
 		self.ecg_canvas = FigureCanvasTkAgg(self.ecg_fig, master=self.ecg_graph_frame)
 		#self.ecg_canvas.show()
@@ -294,28 +334,35 @@ class heartbox_wave_viewer:
 		#self.ppg_canvas.show()
 		self.ppg_canvas.get_tk_widget().grid(column=0, row=0, sticky = 'E' + 'W' + 'N' + 'S')
 
-		self.ppg_canvas = FigureCanvasTkAgg(self.ppg_R_fig, master=self.ppg_R_graph_frame)
+		self.ppg_R_canvas = FigureCanvasTkAgg(self.ppg_R_fig, master=self.ppg_R_graph_frame)
 		#self.ppg_canvas.show()
-		self.ppg_canvas.get_tk_widget().grid(column=0, row=0, sticky = 'E' + 'W' + 'N' + 'S')
+		self.ppg_R_canvas.get_tk_widget().grid(column=0, row=0, sticky = 'E' + 'W' + 'N' + 'S')
+
+		self.ppg_IR_canvas = FigureCanvasTkAgg(self.ppg_IR_fig, master=self.ppg_IR_graph_frame)
+		#self.ppg_canvas.show()
+		self.ppg_IR_canvas.get_tk_widget().grid(column=0, row=0, sticky = 'E' + 'W' + 'N' + 'S')
 		
 	#defines internal layout of vitals
 	def vitals_layout(self):
 		self.heartbeat_var = tk.IntVar() # initialize metric variables
-		self.SP02_var = tk.IntVar()
+		self.SP02_var = tk.StringVar()
 		self.temp_var = tk.IntVar()
 		self.pulse_transit_var = tk.IntVar()
 		self.abnormal_var = tk.StringVar()
 
+		self.SP02_var_min = tk.StringVar()
+		self.SP02_var_max = tk.StringVar()
+
 		self.heartbeat_var = np.random.randint(40, 60)
-		self.SP02_var = np.random.randint(20, 30)
+		self.SP02_var = (self.dsp.SP02_value)
 		self.temp_var = np.random.randint(98, 102)
 		self.pulse_transit_var = np.random.randint(50, 55)
 		self.abnormal_var = settings.condition_set[np.random.randint(0, 3)]
 
-		self.heartbeat_var_min = self.heartbeat_var #initialize max/min metric vars
-		self.SP02_var_min = self.SP02_var
-		self.temp_var_min = self.temp_var
-		self.ptt_var_min = self.pulse_transit_var
+		self.heartbeat_var_min = 9999#initialize max/min metric vars
+		self.SP02_var_min = 9999
+		self.temp_var_min = 9999
+		self.ptt_var_min = 9999
 		
 		self.heartbeat_var_max = self.heartbeat_var
 		self.SP02_var_max = self.SP02_var
@@ -325,7 +372,7 @@ class heartbox_wave_viewer:
 		self.root.columnconfigure(0, weight = 7) #Used to allow for widgets to scale with window resolution. This is the column with the graph widgets
 		self.root.columnconfigure(1, weight = 1)
 		self.root.rowconfigure(0, weight = 0)
-		self.root.rowconfigure(1, weight = 1)#scales only the graph/vitals widgets, not the menubar
+		self.root.rowconfigure(1, weight = 1) #scales only the graph/vitals widgets, not the menubar
 
 		self.text_monitor_frame = tk.LabelFrame(self.root, bd = 1, font = self.vitals_title_font,
 			text = "VITALS", padx = 5, fg= settings.font_color, bg = settings.back_color) #frame that contains all vital metrics
@@ -385,15 +432,15 @@ class heartbox_wave_viewer:
 		self.abnormal_text = tk.Label(self.abnormal_frame, text = "ABNORMAL HB", 
 			font = self.vitals_subtitle_font, anchor ="w", fg=settings.font_color, bg = settings.back_color)
 
-		self.heartbeat_label = tk.Label(self.heartbeat_frame, text = self.heartbeat_var, font = self.vitals_text_font,
+		self.heartbeat_label = tk.Label(self.heartbeat_frame, text = '--', font = self.vitals_text_font,
 			fg=settings.font_color, bg = settings.back_color)
-		self.SP02_label = tk.Label(self.SP02_frame, text = self.SP02_var, font = self.vitals_text_font,
+		self.SP02_label = tk.Label(self.SP02_frame, text = '--', font = self.vitals_text_font,
 			anchor ="w", fg=settings.font_color, bg = settings.back_color)
-		self.temp_label = tk.Label(self.temp_frame, text = self.temp_var, font = self.vitals_text_font,
+		self.temp_label = tk.Label(self.temp_frame, text = '--', font = self.vitals_text_font,
 			anchor ="w", fg=settings.font_color, bg = settings.back_color)
-		self.pulse_transit_label = tk.Label(self.pulse_transit_frame, text = self.pulse_transit_var, 
+		self.pulse_transit_label = tk.Label(self.pulse_transit_frame, text = '--', 
 			font = self.vitals_text_font, anchor ="w", fg=settings.font_color, bg = settings.back_color)
-		self.abnormal_label = tk.Label(self.abnormal_frame, text = self.abnormal_var, font = self.vitals_text_font,
+		self.abnormal_label = tk.Label(self.abnormal_frame, text = '--', font = self.vitals_text_font,
 		    anchor ="w", fg=settings.font_color, bg = settings.back_color)
 
 		self.frame_heartbeat_min_max = tk.Frame(self.heartbeat_frame)
@@ -450,24 +497,24 @@ class heartbox_wave_viewer:
 		self.ptt_min_label.grid(row = 0, column = 0, sticky = "W")
 		self.ptt_max_label.grid(row = 1, column = 0, sticky = "W")
 
-		self.heartbeat_min_value = tk.Label(self.frame_heartbeat_min_max, text = self.heartbeat_var_min, 
+		self.heartbeat_min_value = tk.Label(self.frame_heartbeat_min_max, text = '--', 
 			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
-		self.heartbeat_max_value = tk.Label(self.frame_heartbeat_min_max, text = self.heartbeat_var_max, 
-			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
-
-		self.SP02_min_value = tk.Label(self.frame_SP02_min_max, text = self.SP02_var_min, 
-			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
-		self.SP02_max_value= tk.Label(self.frame_SP02_min_max, text = self.SP02_var_max, 
+		self.heartbeat_max_value = tk.Label(self.frame_heartbeat_min_max, text = '--', 
 			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
-		self.temp_min_value= tk.Label(self.frame_temp_min_max, text = self.temp_var_min, 
+		self.SP02_min_value = tk.Label(self.frame_SP02_min_max, text = '--', 
 			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
-		self.temp_max_value = tk.Label(self.frame_temp_min_max, text = self.temp_var_max, 
+		self.SP02_max_value= tk.Label(self.frame_SP02_min_max, text = '--', 
 			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
-		self.ptt_min_value = tk.Label(self.frame_ptt_min_max, text = self.ptt_var_min, font = 
+		self.temp_min_value= tk.Label(self.frame_temp_min_max, text = '--', 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+		self.temp_max_value = tk.Label(self.frame_temp_min_max, text = '--', 
+			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
+
+		self.ptt_min_value = tk.Label(self.frame_ptt_min_max, text = '--', font = 
 			self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
-		self.ptt_max_value = tk.Label(self.frame_ptt_min_max, text = self.ptt_var_max, 
+		self.ptt_max_value = tk.Label(self.frame_ptt_min_max, text = '--', 
 			font = self.vitals_subtext_font, fg=settings.font_color, bg = settings.back_color)
 
 		self.heartbeat_min_value.grid(row = 0, column = 1)
@@ -492,21 +539,34 @@ class heartbox_wave_viewer:
 
 	def update_viewer(self):
 		#uses stored data for waveforms
+		#pdb.set_trace()
 		self.ecg_im.set_xdata(np.arange(self.ecg_start_graph_index, self.n))
 		self.ecg_im.set_ydata(self.ecg_data[self.ecg_start_graph_index: self.n])
 		self.ppg_im.set_xdata(np.arange(self.ecg_start_graph_index, self.n))
 		self.ppg_im.set_ydata(self.ppg_data[self.ppg_start_graph_index: self.n])
 		self.ppg_R_im.set_xdata(np.arange(self.ppg_R_start_graph_index, self.n))
 		self.ppg_R_im.set_ydata(self.ppg_R_data[self.ppg_R_start_graph_index: self.n])
+		self.ppg_IR_im.set_xdata(np.arange(self.ppg_IR_start_graph_index, self.n))
+		self.ppg_IR_im.set_ydata(self.ppg_IR_data[self.ppg_IR_start_graph_index: self.n])
 
 		#self.heartbeat_var = np.random.randint(40, 60)
-		# self.SP02_var = np.random.randint(20, 30)
 		# self.temp_var = np.random.randint(98, 102)
 		# self.pulse_transit_var = np.random.randint(50, 55)
 		# self.abnormal_var = condition_set[np.random.randint(0, 3)]
 
-		self.heartbeat_label.configure(text = self.heartbeat_var)
-		# self.SP02_label.configure(text = self.SP02_var)
+		#self.heartbeat_label.configure(text = self.heartbeat_var)
+
+		if(self.dsp.SP02_valid):
+			self.SP02_var = self.dsp.SP02_value
+			self.SP02_label.configure(text = self.SP02_var)
+			if(self.SP02_var < self.SP02_var_min):
+				self.SP02_var_min = self.SP02_var
+				self.SP02_min_value.configure(text = self.SP02_var_min)
+			if(self.SP02_var > self.SP02_var_max):
+				self.SP02_var_max = self.SP02_var
+				self.SP02_max_value.configure(text = self.SP02_var_max)
+		else:
+			self.SP02_label.configure(text = '--')
 		# self.temp_label.configure(text = self.temp_var)
 		# self.pulse_transit_label.configure(text = self.pulse_transit_var)
 		# self.abnormal_label.configure(text = self.abnormal_var)
@@ -517,10 +577,12 @@ class heartbox_wave_viewer:
 			self.ecg_start_graph_index = self.n
 			self.ppg_start_graph_index = self.n 
 			self.ppg_R_start_graph_index = self.n
+			self.ppg_IR_start_graph_index = self.n
 
 			limX1 = self.ecg_ax.set_xlim(self.n, self.n + self.repeat_length)
 			limX2 = self.ppg_ax.set_xlim(self.n, self.n + self.repeat_length)
 			limX3 = self.ppg_R_ax.set_xlim(self.n, self.n + self.repeat_length)
+			limX4 = self.ppg_IR_ax.set_xlim(self.n, self.n + self.repeat_length)
 
 			self.ecg_max = settings.large_value_neg
 			self.ecg_min = settings.large_value
@@ -528,6 +590,8 @@ class heartbox_wave_viewer:
 			self.ppg_min = settings.large_value
 			self.ppg_R_max = settings.large_value_neg
 			self.ppg_R_min = settings.large_value
+			self.ppg_IR_max = settings.large_value_neg
+			self.ppg_IR_min = settings.large_value
 
 			if(self.ecg_data[self.n] > self.ecg_max):
 				self.ecg_max = self.ecg_data[self.n] + 500
@@ -541,14 +605,19 @@ class heartbox_wave_viewer:
 				self.ppg_R_max = self.ppg_R_data[self.n] + 500
 			elif(self.ppg_R_data[self.n] < self.ppg_R_min):
 				self.ppg_R_min = self.ppg_R_data[self.n] - 500
-
+			if(self.ppg_IR_data[self.n] > self.ppg_IR_max):
+				self.ppg_IR_max = self.ppg_IR_data[self.n] + 500
+			elif(self.ppg_IR_data[self.n] < self.ppg_IR_min):
+				self.ppg_IR_min = self.ppg_IR_data[self.n] - 500
 			limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
 			limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
 			limY3 = self.ppg_R_ax.set_ylim([self.ppg_R_min, self.ppg_R_max])
+			limY4 = self.ppg_IR_ax.set_ylim([self.ppg_IR_min, self.ppg_IR_max])
 
 			self.ecg_fig.canvas.draw()
 			self.ppg_fig.canvas.draw()
 			self.ppg_R_fig.canvas.draw()
+			self.ppg_IR_fig.canvas.draw()
 
 		#otherwise, we can plot efficiently since we don't need to change the viewing window
 		else:
@@ -592,7 +661,7 @@ class heartbox_wave_viewer:
 
 			if(self.ppg_R_max - self.ppg_R_min < 10000):
 				if(self.ppg_R_data[self.n] > self.ppg_R_max):
-					self.ppg_R_max = self.ppg_data[self.n] + 500
+					self.ppg_R_max = self.ppg_R_data[self.n] + 500
 					limY2 = self.ppg_R_ax.set_ylim([self.ppg_R_min, self.ppg_R_max])
 					self.ppg_R_fig.canvas.draw()
 
@@ -608,23 +677,48 @@ class heartbox_wave_viewer:
 					self.ppg_R_fig.canvas.restore_region(self.ppg_R_background)
 					self.ppg_R_ax.draw_artist(self.ppg_R_im)
 					self.ppg_R_fig.canvas.blit(self.ppg_R_ax.bbox)
+			
+			if(self.ppg_IR_max - self.ppg_IR_min < 10000):
+				if(self.ppg_IR_data[self.n] > self.ppg_IR_max):
+					self.ppg_IR_max = self.ppg_IR_data[self.n] + 500
+					limY2 = self.ppg_IR_ax.set_ylim([self.ppg_IR_min, self.ppg_IR_max])
+					self.ppg_IR_fig.canvas.draw()
+
+				elif(self.ppg_IR_data[self.n] < self.ppg_IR_min):
+					self.ppg_IR_min = self.ppg_IR_data[self.n] - 500
+					limY2 = self.ppg_IR_ax.set_ylim([self.ppg_IR_min, self.ppg_IR_max])
+					self.ppg_IR_fig.canvas.draw()
+				else:
+					self.ppg_IR_fig.canvas.restore_region(self.ppg_IR_background)
+					self.ppg_IR_ax.draw_artist(self.ppg_IR_im)
+					self.ppg_IR_fig.canvas.blit(self.ppg_IR_ax.bbox)
+			else:
+					self.ppg_IR_fig.canvas.restore_region(self.ppg_IR_background)
+					self.ppg_IR_ax.draw_artist(self.ppg_IR_im)
+					self.ppg_IR_fig.canvas.blit(self.ppg_IR_ax.bbox)
+
 
 	#graph renderer for live data
 	def read_live_samples(self):
 		#while(~q.empty()):
 		if(self.heartbox_connect_state):
+			#pdb.set_trace()
 			filtered_data = self.dsp.filt_data_gen()
 			if(filtered_data != 'Q' and filtered_data != 'B'):
-				#print 'X'
 				filtered_ppg = filtered_data[0,:]
 				filtered_ecg = filtered_data[1,:]
-				if(self.android_disconnect_state):
+				filtered_ppg_R = filtered_data[2,:]
+				filtered_ppg_IR = filtered_data[3,:]
+
+				if(self.android_connect_state):
 					heartbox_comm.heartbox_bt_send(pack('ff', filtered_ecg, filtered_ppg))
 
 				self.heartbox_var = self.dsp.calc_heartrate()
+
 				self.ppg_data = np.append(self.ppg_data, filtered_ppg)
 				self.ecg_data = np.append(self.ecg_data, filtered_ecg)
-
+				self.ppg_R_data = np.append(self.ppg_R_data, filtered_ppg_R)
+				self.ppg_IR_data = np.append(self.ppg_IR_data, filtered_ppg_IR)
 				#print self.ppg_data[self.n]
 				self.n = self.n + filtered_ecg.size - 1
 				self.update_viewer()
@@ -651,9 +745,10 @@ class heartbox_wave_viewer:
 			ecg_height = self.ecg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
 			ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
 			ppg_height = self.ppg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
-
 			ppg_R_width = self.ppg_R_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
 			ppg_R_height = self.ppg_R_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
+			ppg_IR_width = self.ppg_IR_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
+			ppg_IR_height = self.ppg_IR_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
 
 			self.vitals_title_font.configure(size = self.vitals_title_font_size)
 			self.vitals_subtitle_font.configure(size = self.vitals_subtitle_font_size)
@@ -664,6 +759,7 @@ class heartbox_wave_viewer:
 			self.ecg_disconnect.set_size(20)
 			self.ppg_disconnect.set_size(20)
 			self.ppg_R_disconnect.set_size(20)
+			self.ppg_IR_disconnect.set_size(20)
 
 		else:
 			ecg_width = float(self.ecg_fig.get_size_inches()[0]) * float(self.screen_width) / float(self.min_screen_width)
@@ -672,11 +768,15 @@ class heartbox_wave_viewer:
 			ppg_height = float(self.ppg_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
 			ppg_R_width = float(self.ppg_R_fig.get_size_inches()[0])* float(self.screen_width) /float(self.min_screen_width)
 			ppg_R_height = float(self.ppg_R_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
+			ppg_IR_width = float(self.ppg_R_fig.get_size_inches()[0])* float(self.screen_width) /float(self.min_screen_width)
+			ppg_IR_height = float(self.ppg_R_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
+
 			new_to_old_ratio = float(self.screen_width) / float(self.min_screen_width)
 
 			self.ecg_disconnect.set_size(20*new_to_old_ratio)
 			self.ppg_disconnect.set_size(20*new_to_old_ratio)
 			self.ppg_R_disconnect.set_size(20*new_to_old_ratio)
+			self.ppg_IR_disconnect.set_size(20*new_to_old_ratio)
 
 			self.vitals_title_font.configure(size = int(self.vitals_title_font_size * new_to_old_ratio))
 			self.vitals_subtitle_font.configure(size = int(self.vitals_subtitle_font_size * new_to_old_ratio))
@@ -687,35 +787,50 @@ class heartbox_wave_viewer:
 		self.ecg_fig.set_size_inches(ecg_width, ecg_height)
 		self.ppg_fig.set_size_inches(ppg_width, ppg_height)
 		self.ppg_R_fig.set_size_inches(ppg_R_width, ppg_R_height)
+		self.ppg_IR_fig.set_size_inches(ppg_IR_width, ppg_IR_height)
 
 		self.ecg_fig.canvas.draw()
 		self.ppg_fig.canvas.draw()
 		self.ppg_R_fig.canvas.draw()
+		self.ppg_IR_fig.canvas.draw()
 
 		return "break"
 
 	def end_fullscreen(self, event=None):
-		self.fullscreen_state = False
-		self.root.attributes("-fullscreen", False)
+		if(self.fullscreen_state == True):
+			self.fullscreen_state = False
+			self.root.attributes("-fullscreen", False)
 
-		ecg_width = self.ecg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width) 
-		ecg_height = self.ecg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
-		ppg_width = self.ppg_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
-		ppg_height = self.ppg_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)
-		ppg_R_width = self.ppg_R_fig.get_size_inches()[0] * float(self.min_screen_width) / float(self.screen_width)
-		ppg_R_height = self.ppg_R_fig.get_size_inches()[1] * float(self.min_screen_height) / float(self.screen_height)		
+			ecg_width = float(self.ecg_fig.get_size_inches()[0]) * float(self.screen_width) / float(self.min_screen_width)
+			ecg_height = float(self.ecg_fig.get_size_inches()[1]) * float(self.screen_height) /  float(self.min_screen_height)
+			ppg_width = float(self.ppg_fig.get_size_inches()[0])* float(self.screen_width) /float(self.min_screen_width)
+			ppg_height = float(self.ppg_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
+			ppg_R_width = float(self.ppg_R_fig.get_size_inches()[0])* float(self.screen_width) /float(self.min_screen_width)
+			ppg_R_height = float(self.ppg_R_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
+			ppg_IR_width = float(self.ppg_R_fig.get_size_inches()[0])* float(self.screen_width) /float(self.min_screen_width)
+			ppg_IR_height = float(self.ppg_R_fig.get_size_inches()[1])* float(self.screen_height) / float(self.min_screen_height)
+			new_to_old_ratio = float(self.screen_width) / float(self.min_screen_width)
 
-		self.ecg_fig.set_size_inches(ecg_width, ecg_height)
-		self.ppg_fig.set_size_inches(ppg_width, ppg_height)
-		self.ppg_R_fig.set_size_inches(ppg_R_width, ppg_R_height)
+			self.ecg_fig.set_size_inches(ecg_width, ecg_height)
+			self.ppg_fig.set_size_inches(ppg_width, ppg_height)
+			self.ppg_R_fig.set_size_inches(ppg_R_width, ppg_R_height)
+			self.ppg_IR_fig.set_size_inches(ppg_IR_width, ppg_IR_height)
 
-		self.ecg_disconnect.set_size(20)
-		self.ppg_disconnect.set_size(20)
-		self.ppg_R_disconnect.set_size(20)
+			self.vitals_title_font.configure(size = int(self.vitals_title_font_size * new_to_old_ratio))
+			self.vitals_subtitle_font.configure(size = int(self.vitals_subtitle_font_size * new_to_old_ratio))
+			self.vitals_menubar_font.configure(size = int(self.vitals_menubar_font_size * new_to_old_ratio))
+			self.vitals_text_font.configure(size = int(self.vitals_text_font_size * new_to_old_ratio))
+			self.vitals_subtext_font.configure(size = int(self.vitals_subtext_font_size * new_to_old_ratio))
 
-		self.ecg_fig.canvas.draw()
-		self.ppg_fig.canvas.draw()
-		self.ppg_R_fig.canvas.draw()
+			self.ecg_disconnect.set_size(20*new_to_old_ratio)
+			self.ppg_disconnect.set_size(20*new_to_old_ratio)
+			self.ppg_R_disconnect.set_size(20*new_to_old_ratio)
+			self.ppg_IR_disconnect.set_size(20*new_to_old_ratio)
+
+			self.ecg_fig.canvas.draw()
+			self.ppg_fig.canvas.draw()
+			self.ppg_R_fig.canvas.draw()
+			self.ppg_IR_fig.canvas.draw()
 
 		return "break"
 
@@ -724,6 +839,8 @@ class heartbox_wave_viewer:
 		if(self.ecg_disconnect_state):
 			self.toggle_ecg_disconnect()
 			self.toggle_ppg_disconnect()
+			self.toggle_ppg_R_disconnect()
+			self.toggle_ppg_IR_disconnect()
 		self.startup()
 
 	def disconnect_heartbox(self):
@@ -731,6 +848,8 @@ class heartbox_wave_viewer:
 		if(not self.ecg_disconnect_state):
 			self.toggle_ecg_disconnect()
 			self.toggle_ppg_disconnect()
+			self.toggle_ppg_R_disconnect()
+			self.toggle_ppg_IR_disconnect()
 		if(not self.android_connect_state):
 			self.disconnect_bt_android()
 
@@ -755,7 +874,7 @@ class heartbox_wave_viewer:
 
 		self.ppg_fig.canvas.draw()
 
-	def toggle_ppg_disconnect(self):
+	def toggle_ppg_R_disconnect(self):
 		if(not self.ppg_R_disconnect_state):
 			self.ppg_R_disconnect.set_text('---- DISCONNECTED ----')
 			self.ppg_R_disconnect_state = True
@@ -764,6 +883,16 @@ class heartbox_wave_viewer:
 			self.ppg_R_disconnect_state = False
 
 		self.ppg_R_fig.canvas.draw()
+
+	def toggle_ppg_IR_disconnect(self):
+		if(not self.ppg_IR_disconnect_state):
+			self.ppg_IR_disconnect.set_text('---- DISCONNECTED ----')
+			self.ppg_IR_disconnect_state = True
+		else:
+			self.ppg_IR_disconnect.set_text('')
+			self.ppg_IR_disconnect_state = False
+
+		self.ppg_IR_fig.canvas.draw()
 
 	def connect_bt_android(self):
 		self.android_connect_state = True
@@ -806,7 +935,7 @@ class heartbox_wave_viewer:
 			error_label.grid(row = 0, column = 0)
 
 	def open_adpd103_docs(self):
-		subprocess.Popen(['ADI_Tech_Spec.pdf'],shell=True)
+		subprocess.Popen(['ADPD105-106-107.pdf'],shell=True)
 
 	def create_ppg_highlevel(self):
 		ppg_highlevel()
