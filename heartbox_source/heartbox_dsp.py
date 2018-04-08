@@ -8,6 +8,10 @@ filterCoeffB_ppg_L, filterCoeffA_ppg_L = signal.butter(5,.1,'lowpass')
 filterCoeffB_ecg_H, filterCoeffA_ecg_H = signal.butter(5,.005,'highpass')
 filterCoeffB_ecg_L, filterCoeffA_ecg_L = signal.butter(5,.3,'lowpass')
 
+filterCoeffB_sp02_H, filterCoeffA_sp02_H = signal.butter(5,.0025,'highpass')
+filterCoeffB_sp02_L, filterCoeffA_sp02_L = signal.butter(5,.1,'lowpass')
+
+
 filter_length = 20 #cannot be hardcoded
 sample_rate = 50.0
 num_seconds = 20
@@ -24,7 +28,7 @@ class heartbox_dsp:
 		self.SP02_counter = 0
 		self.SP02_valid = False
 		self.SP02_value = 0
-		self.f = open("sp02.txt","w+")
+		#self.f = open("sp02.txt","w")
 
 	def parse_sample(self, sample):
 		if(len(sample) < 30):
@@ -45,19 +49,19 @@ class heartbox_dsp:
 			i = i + 1
 
 		#print i
-		filtered_data = np.zeros((2,i))
+		filtered_data = np.zeros((4,i))
 
 		if(i > 0):
 			for x in range(i):
 	 			sample = sample_buffer[x]
 	 			#print sample
 	 			E1, E2, G, R, IR = self.parse_sample(sample)
-				
+				#print R, IR 
 				#E1 = E2 = G = R = IR = 0
 
 				#print A, B
 				#pdb.set_trace()
-				self.fifo_ppg = np.append(self.fifo_ppg[1:],R)
+				self.fifo_ppg = np.append(self.fifo_ppg[1:], G) # FIX LATER
 				self.fifo_ecg = np.append(self.fifo_ecg[1:], E1-E2)
 				self.fifo_IR = np.append(self.fifo_IR[1:], IR)
 				self.fifo_R = np.append(self.fifo_R[1:], R)
@@ -81,7 +85,20 @@ class heartbox_dsp:
 					#filtered_ecg = signal.filtfilt(filterCoeffB_ecg_H,filterCoeffA_ecg_H,filtered_ecg)
 					#moving_ecg_avg = np.sum(filtered_ecg)
 
-					filtered_data[:,x] = [moving_ppg_avg, filtered_ecg[filter_length-1]]
+					filtered_ppg_R = signal.filtfilt(filterCoeffB_sp02_L,filterCoeffA_sp02_L,\
+						self.fifo_R[self.fifo_R.size - filter_length:])
+
+
+					filtered_ppg_R = signal.filtfilt(filterCoeffB_sp02_H,filterCoeffA_sp02_H,filtered_ppg_R)
+
+
+					filtered_ppg_IR = signal.filtfilt(filterCoeffB_sp02_L,filterCoeffA_sp02_L,\
+						self.fifo_IR[self.fifo_IR.size - filter_length:])
+
+
+					filtered_ppg_IR = signal.filtfilt(filterCoeffB_sp02_H,filterCoeffA_sp02_H,filtered_ppg_IR)
+
+					filtered_data[:,x] = [moving_ppg_avg, filtered_ecg[filter_length-1], filtered_ppg_R[filter_length-1], filtered_ppg_IR[filter_length-1]]
 
 			if(self.numSamples < filter_length):
 				return 'B'
@@ -96,6 +113,7 @@ class heartbox_dsp:
 		if(self.fifo_R[-1] < 4000):
 			self.SP02_valid = False
 			self.SP02_counter = 0
+			return 0
 		elif(self.SP02_counter == sample_rate * num_seconds):
 			self.SP02_valid = True
 			filteredR = signal.filtfilt(filterCoeffB_ppg_L,filterCoeffA_ppg_L,self.fifo_R)
@@ -106,11 +124,16 @@ class heartbox_dsp:
 			AC_IR = np.average(np.absolute(np.gradient(filteredIR)))
 			DC_IR = np.average(filteredIR)
 			self.SP02_value = (AC_R/DC_R)/(AC_IR/DC_IR)
-			self.f.write("%f \n"% self.SP02_value)
+			self.SP02_value = int(np.floor(106 - 20*(self.SP02_value)))
+			return self.SP02_value
+			#print self.SP02_value
+			#self.f.write("%f \n"% self.SP02_value)
 
 		else:
 			self.SP02_valid = False
 			self.SP02_counter = self.SP02_counter + 1
+			return 0
+
 
 	def calc_heartrate(self):
 		if(self.numSamples%(5*sample_rate) == 0 and self.numSamples > 1000):

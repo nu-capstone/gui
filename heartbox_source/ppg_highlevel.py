@@ -134,7 +134,7 @@ class ppg_highlevel:
 		self.slot_A_LED_text = tk.Label(self.frame_slot_A_LED_control_box_A, text = "LED",
 			fg= settings.font_color, bg = settings.back_color)
 		self.slot_A_LED_text.grid(row = 0, column = 0)
-		options_slotA_LED = ('X', 'Y', 'Z')
+		options_slotA_LED = ('LED NONE', 'LED 1', 'LED 2', 'LED 3')
 		self.default_options_slotA_LED = tk.StringVar()
 		self.default_options_slotA_LED.set(options_slotA_LED[0])
 		self.slot_A_LED_option_menu = tk.OptionMenu(self.frame_slot_A_LED_control_box_A, self.default_options_slotA_LED, *options_slotA_LED)
@@ -145,7 +145,7 @@ class ppg_highlevel:
 		self.slot_A_LED_status_text = tk.Label(self.frame_slot_A_LED_control_box_A, text = "LED Status",
 			fg= settings.font_color, bg = settings.back_color)
 		self.slot_A_LED_status_text.grid(row = 1, column = 0)
-		options_slotA_LED_status = ('X', 'Y', 'Z')
+		options_slotA_LED_status = ('LED ON', 'LED OFF')
 		self.default_options_slotA_LED_status = tk.StringVar()
 		self.default_options_slotA_LED_status.set(options_slotA_LED_status[0])
 
@@ -189,7 +189,7 @@ class ppg_highlevel:
 		self.slot_B_LED_text = tk.Label(self.frame_slot_B_LED_control_box_A, text = "LED",
 			fg= settings.font_color, bg = settings.back_color)
 		self.slot_B_LED_text.grid(row = 0, column = 0)
-		options_slotB_LED = ('X', 'Y', 'Z')
+		options_slotB_LED = ('LED NONE', 'LED 1', 'LED 2', 'LED 3')
 		self.default_options_slotB_LED = tk.StringVar()
 		self.default_options_slotB_LED.set(options_slotB_LED[0])
 		self.slot_B_LED_option_menu = tk.OptionMenu(self.frame_slot_B_LED_control_box_A, self.default_options_slotB_LED, *options_slotB_LED)
@@ -200,7 +200,7 @@ class ppg_highlevel:
 		self.slot_B_LED_status_text = tk.Label(self.frame_slot_B_LED_control_box_A, text = "LED Status",
 			fg= settings.font_color, bg = settings.back_color)
 		self.slot_B_LED_status_text.grid(row = 1, column = 0)
-		options_slotB_LED_status = ('X', 'Y', 'Z')
+		options_slotB_LED_status = ('LED ON', 'LED OFF')
 		self.default_options_slotB_LED_status = tk.StringVar()
 		self.default_options_slotB_LED_status.set(options_slotB_LED_status[0])
 
