@@ -12,7 +12,7 @@ port = ''
 host = ''
 #sock = BluetoothSocket( RFCOMM )
 
-def heartbox_uart_conf_register(text):
+def heartbox_uart_conf_reg(text):
 	ser = serial.Serial('COM3', baudrate = 460800, timeout = 3)
 
 	if(ser.isOpen() == False):

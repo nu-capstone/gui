@@ -1,7 +1,7 @@
 import settings
 from heartbox_dsp import heartbox_dsp
 import heartbox_comm
-from ppg_highlevel import ppg_highlevel
+from config_highlevel import config_highlevel
 import Tkinter as tk 
 from PIL import Image, ImageTk
 import tkFont
@@ -102,7 +102,6 @@ class heartbox_wave_viewer:
 		self.ppg_ax = self.ppg_fig.add_subplot(1,1,1)
 		self.ppg_R_ax = self.ppg_R_fig.add_subplot(1,1,1)
 		self.ppg_IR_ax = self.ppg_IR_fig.add_subplot(1,1,1)
-		plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
 
 		self.ecg_ax.locator_params(axis='y', nbins =2)
 		self.ecg_ax.locator_params(axis='x', nbins =2)
@@ -158,6 +157,8 @@ class heartbox_wave_viewer:
 		self.ppg_ax.set_ylim([-1,1])
 		self.ppg_R_ax.set_ylim([-1,1])
 		self.ppg_IR_ax.set_ylim([-1,1])
+		
+		plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
 
 		self.ecg_im, = self.ecg_ax.plot([], [], color=(0,0,1))
 		self.ppg_im, = self.ppg_ax.plot([], [], color=(1,0,1))
@@ -261,7 +262,7 @@ class heartbox_wave_viewer:
 		 background = settings.back_color, fg= settings.font_color, font = self.vitals_menubar_font)
 		self.tools_button['menu'] = self.tools_button.menu
 		self.tools_button.menu.add_command(label="Set a register", command=self.config_register_window)
-		self.tools_button.menu.add_command(label="Open high-level register config", command=self.create_ppg_highlevel)
+		self.tools_button.menu.add_command(label="Open high-level register config", command=self.create_config_highlevel)
 		self.tools_button.menu.add_separator()
 		self.tools_button.menu.add_command(label="Option 3")
 		self.tools_button.menu.add_separator()
@@ -370,7 +371,7 @@ class heartbox_wave_viewer:
 		self.ptt_var_max = self.pulse_transit_var
 
 		self.root.columnconfigure(0, weight = 7) #Used to allow for widgets to scale with window resolution. This is the column with the graph widgets
-		self.root.columnconfigure(1, weight = 1)
+		self.root.columnconfigure(1, weight = 2)
 		self.root.rowconfigure(0, weight = 0)
 		self.root.rowconfigure(1, weight = 1) #scales only the graph/vitals widgets, not the menubar
 
@@ -937,8 +938,8 @@ class heartbox_wave_viewer:
 	def open_adpd103_docs(self):
 		subprocess.Popen(['ADPD105-106-107.pdf'],shell=True)
 
-	def create_ppg_highlevel(self):
-		ppg_highlevel()
+	def create_config_highlevel(self):
+		config_highlevel()
 
 if __name__ == "__main__":
 	graph_viewer = heartbox_wave_viewer()

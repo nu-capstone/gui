@@ -6,11 +6,13 @@ import settings
 from PIL import Image, ImageTk
 import pdb
 
-class ppg_highlevel:
+class config_highlevel:
 	def __init__(self): 
-		ppg_toplevel = tk.Toplevel()
-		ppg_toplevel.configure(bg = settings.back_color)
-		ppg_toplevel.attributes("-toolwindow", 1) 		
+		config_highlevel = tk.Toplevel()
+		config_highlevel.configure(bg = settings.back_color)
+		config_highlevel.minsize(width = 900, height = 600)
+		config_highlevel.columnconfigure(0, weight = 1)
+		config_highlevel.title('HeartBox High-level Configuration')
 
 		self.title_font_size = 8
 		self.subtitle_font_size = 6
@@ -18,14 +20,19 @@ class ppg_highlevel:
 		self.title_font = tkFont.Font(family = 'Consolas', size = self.title_font_size)
 		self.subtitle_font = tkFont.Font(family = 'Consolas', size = self.subtitle_font_size)
 
-		self.create_banner(ppg_toplevel)
-		self.ppg_highLevelControl(ppg_toplevel)
-		self.frame_ppg_LEDOptions(ppg_toplevel)
+		self.create_banner(config_highlevel)
+		self.ppg_highLevelControl(config_highlevel)
+		self.frame_ppg_LEDOptions(config_highlevel)
 
 	def create_banner(self, master): #menu pane configuration
 		img = ImageTk.PhotoImage(Image.open("heart_box_logo.png"))
 		self.picture_frame = tk.Frame(master, bd = 0)
-		self.picture_frame.grid(row = 0, column = 0)
+		self.picture_frame.grid(row = 0, column = 0, sticky=tk.W+tk.E+tk.N+tk.S)
+		self.picture_frame.columnconfigure(0, weight = 1)
+		self.picture_frame.columnconfigure(1, weight = 1)
+		self.picture_frame.columnconfigure(2, weight = 1)
+		self.picture_frame.columnconfigure(3, weight = 1)
+
 		self.panel = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0,
 			fg= settings.font_color, bg = settings.back_color)
 		self.panel2 = tk.Label(self.picture_frame, image = img, padx = 0, pady = 0, bd = 0,
@@ -40,69 +47,87 @@ class ppg_highlevel:
 		self.panel3.image = img
 		self.panel4.image = img
 
-		self.panel.grid(row = 0, column = 0)
-		self.panel2.grid(row = 0, column = 1)
-		self.panel3.grid(row = 0, column = 2)
-		self.panel4.grid(row = 0, column = 3)
+		self.panel.grid(row = 0, column = 0, sticky=tk.W+tk.E+tk.N+tk.S)
+		self.panel2.grid(row = 0, column = 1, sticky=tk.W+tk.E+tk.N+tk.S)
+		self.panel3.grid(row = 0, column = 2, sticky=tk.W+tk.E+tk.N+tk.S)
+		self.panel4.grid(row = 0, column = 3, sticky=tk.W+tk.E+tk.N+tk.S)
 
 	def ppg_highLevelControl(self, master): #button for switching into register level
-		self.frame_register = tk.Frame(master, bd = 0)
-		self.frame_register.grid(row = 1, column = 0, sticky = tk.E)
-		#self.ppg_graph_page = ppg_graph(master)
+		self.frame_register = tk.Frame(master, bd = 0, bg = settings.back_color)
+		self.frame_register.grid(row = 1, column = 0, sticky = tk.W+tk.E+tk.N+tk.S)
+		self.frame_register.columnconfigure(0, weight = 4)
+		self.frame_register.columnconfigure(1, weight = 1)
+		self.panel = tk.Label(self.frame_register, padx = 0, pady = 0, bd = 0,
+			fg= settings.font_color, bg = settings.back_color)
+		self.panel.grid(row = 0, column = 0)
 
-		self.switchTo_RegisterLevel = tk.Button(self.frame_register, text="Go to Register Level", 
-			height = 1,fg= settings.font_color, bg = settings.back_color)
-		self.switchTo_RegisterLevel.config(font=(6))
-		self.switchTo_RegisterLevel.grid(row = 0, column = 0)
+		self.switchTo_RegisterLevel = tk.Button(self.frame_register, text= "REGISTER LEVEL", 
+			height = 1, fg= settings.font_color, bg = settings.back_color, pady = 6)
+		self.switchTo_RegisterLevel.config(font=(4))
+		self.switchTo_RegisterLevel.grid(row = 0, column = 1, sticky = tk.S, pady = 2)
 
 	def frame_ppg_LEDOptions(self, master): #container for all LED (slotA/B) options
 		self.frame_ppg = tk.LabelFrame(master, bd = 3, text = "3 LED's High Level Control",
 		 fg= settings.font_color, bg = settings.back_color)
 		self.frame_ppg.config(font=(10))
-		self.frame_ppg.grid(row = 2, column = 0, columnspan = 5, pady = 10)
+		self.frame_ppg.grid(row = 2, column = 0, pady = 10, sticky = tk.W+tk.E+tk.N+tk.S)
+		self.frame_ppg.columnconfigure(0, weight = 1)
+		self.frame_ppg.columnconfigure(1, weight = 1)
 
-		self.sampling_freq_text = tk.Label(self.frame_ppg, text = "Sampling Frequency",
+		self.frame_ppg_left = tk.Frame(self.frame_ppg, bd = 0, bg = settings.back_color)
+		self.frame_ppg_right = tk.Frame(self.frame_ppg, bd = 0, bg = settings.back_color)
+		self.frame_ppg_left.grid(row = 0, column = 0, sticky = tk.W+tk.E+tk.N+tk.S)
+		self.frame_ppg_right.grid(row = 0, column = 1, sticky = tk.W+tk.E+tk.N+tk.S)
+		self.frame_ppg_left.columnconfigure(0, weight = 1)
+		self.frame_ppg_left.columnconfigure(1, weight = 1)
+		self.frame_ppg_left.columnconfigure(2, weight = 1)
+
+		self.frame_ppg_right.columnconfigure(0, weight = 1)
+		self.frame_ppg_right.columnconfigure(1, weight = 1)
+		self.frame_ppg_right.columnconfigure(2, weight = 1)
+
+		self.sampling_freq_text = tk.Label(self.frame_ppg_left, text = "Sampling Frequency",
 			fg= settings.font_color, bg = settings.back_color)
-		self.sampling_freq_text.grid(row = 2, column = 1)
-		self.sampling_freq_spinbox = tk.Spinbox(self.frame_ppg, from_ = 1, to = 100, increment =1, 
+		self.sampling_freq_text.grid(row = 0, column = 1, sticky = tk.W)
+		self.sampling_freq_spinbox = tk.Spinbox(self.frame_ppg_left, from_ = 1, to = 100, increment =1, 
 			width = 5 , fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.sampling_freq_spinbox.grid(row = 2, column = 2)
+		self.sampling_freq_spinbox.grid(row = 0, column = 2, sticky = tk.W)
 
-		self.int_average_text = tk.Label(self.frame_ppg, text = "Internal Average",
+		self.int_average_text = tk.Label(self.frame_ppg_left, text = "Internal Average",
 			fg= settings.font_color, bg = settings.back_color)
-		self.int_average_text.grid(row = 3, column = 1)
-		int_average_slotA = ('X', 'Y', 'Z')
+		self.int_average_text.grid(row = 1, column = 1, sticky = tk.W)
+		int_average_slotA = ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15', '16')
 		self.default_int_average_slotA = tk.StringVar()
 
 		self.default_int_average_slotA.set(int_average_slotA[0])
-		self.slot_mode_A_int_average = tk.OptionMenu(self.frame_ppg, self.default_int_average_slotA, *int_average_slotA)
+		self.slot_mode_A_int_average = tk.OptionMenu(self.frame_ppg_left, self.default_int_average_slotA, *int_average_slotA)
 		self.slot_mode_A_int_average["highlightthickness"]=0
 		self.slot_mode_A_int_average.configure(fg= settings.font_color, bg = settings.back_color)
-		self.slot_mode_A_int_average.grid(row = 3, column = 2)
+		self.slot_mode_A_int_average.grid(row = 1, column = 2, sticky = tk.W)
 
-		self.slot_mode_A_text = tk.Label(self.frame_ppg, text = "Slot_Mode A",
+		self.slot_mode_A_text = tk.Label(self.frame_ppg_right, text = "Slot_Mode A",
 			fg= settings.font_color, bg = settings.back_color)
-		self.slot_mode_A_text.grid(row = 2, column = 3)
+		self.slot_mode_A_text.grid(row = 0, column = 0)
 		options_slotA = ('X', 'Y', 'Z')
 
 		self.default_option_slotA = tk.StringVar()
 		self.default_option_slotA.set(options_slotA[0])
-		self.slot_mode_A_optionmenu = tk.OptionMenu(self.frame_ppg, self.default_option_slotA, *options_slotA)
+		self.slot_mode_A_optionmenu = tk.OptionMenu(self.frame_ppg_right, self.default_option_slotA, *options_slotA)
 		self.slot_mode_A_optionmenu.configure(fg= settings.font_color, bg = settings.back_color)
 		self.slot_mode_A_optionmenu["highlightthickness"]=0
-		self.slot_mode_A_optionmenu.grid(row = 2, column = 4)
+		self.slot_mode_A_optionmenu.grid(row = 0, column = 1)
 
-		self.slot_mode_B_text = tk.Label(self.frame_ppg, text = "Slot_Mode B",
+		self.slot_mode_B_text = tk.Label(self.frame_ppg_right, text = "Slot_Mode B",
 			fg= settings.font_color, bg = settings.back_color)
-		self.slot_mode_B_text.grid(row = 3, column = 3)
+		self.slot_mode_B_text.grid(row = 1, column = 0)
 		options_slotB = ('X', 'Y', 'Z')
 		self.default_option_slotB = tk.StringVar()
 		self.default_option_slotB.set(options_slotB[0])
 
-		self.slot_mode_B_optionmenu = tk.OptionMenu(self.frame_ppg, self.default_option_slotB, *options_slotB)
+		self.slot_mode_B_optionmenu = tk.OptionMenu(self.frame_ppg_right, self.default_option_slotB, *options_slotB)
 		self.slot_mode_B_optionmenu.configure(fg= settings.font_color, bg = settings.back_color)
 		self.slot_mode_B_optionmenu["highlightthickness"]=0
-		self.slot_mode_B_optionmenu.grid(row = 3, column = 4)
+		self.slot_mode_B_optionmenu.grid(row = 1, column = 1)
 
 		self.frame_slot_A_control(self.frame_ppg)
 		self.frame_slot_B_control(self.frame_ppg)
@@ -111,21 +136,29 @@ class ppg_highlevel:
 	def frame_slot_A_control(self, master):
 		self.frame_slot_A_control = tk.LabelFrame(master, bd = 2, text = "SLOT A CONTROL",
 			fg= settings.font_color, bg = settings.back_color)
-		self.frame_slot_A_control.grid(row = 4, column = 1, columnspan = 2, pady = 10, padx = 15, sticky = tk.N)
+		self.frame_slot_A_control.grid(row = 1, column = 0, pady = 10, padx = 5, sticky = tk.N + tk.W + tk.E + tk.S)
+		self.frame_slot_A_control.columnconfigure(0, weight = 1)
+		self.frame_slot_A_control.columnconfigure(1, weight = 1)
+
 		self.frame_slot_A_LED_control(self.frame_slot_A_control)
 		self.frame_slot_A_timing_control(self.frame_slot_A_control)
 
 	def frame_slot_B_control(self, master):
 		self.frame_slot_B_control = tk.LabelFrame(master, bd = 2, text = "SLOT B CONTROL",
 			fg= settings.font_color, bg = settings.back_color)
-		self.frame_slot_B_control.grid(row = 4, column = 3, columnspan = 2, pady = 10, padx = 15, sticky = tk.N)
+		self.frame_slot_B_control.grid(row = 1, column = 1, pady = 10, padx = 5, sticky = tk.N + tk.W + tk.E + tk.S)
+		self.frame_slot_B_control.columnconfigure(0, weight = 1)
+		self.frame_slot_B_control.columnconfigure(1, weight = 1)
+
 		self.frame_slot_B_LED_control(self.frame_slot_B_control)
 		self.frame_slot_B_timing_control(self.frame_slot_B_control)
 
 	def frame_slot_A_LED_control(self, master):
 		self.frame_slot_A_LED_control = tk.LabelFrame(master, bd = 2, text = "LED Control",
 			fg= settings.font_color, bg = settings.back_color)
-		self.frame_slot_A_LED_control.grid(row = 0, column = 0, pady = 10, padx = 5)
+		self.frame_slot_A_LED_control.grid(row = 0, column = 0, pady = 10, padx = 5, sticky = tk.N + tk.W + tk.E + tk.S)
+		self.frame_slot_A_LED_control.columnconfigure(0, weight = 1)
+		self.frame_slot_A_LED_control.columnconfigure(1, weight = 1)
 
 		self.frame_slot_A_LED_control_box_A = tk.LabelFrame(self.frame_slot_A_LED_control, 
 			bd = 2, fg= settings.font_color, bg = settings.back_color)
@@ -134,13 +167,15 @@ class ppg_highlevel:
 		self.slot_A_LED_text = tk.Label(self.frame_slot_A_LED_control_box_A, text = "LED",
 			fg= settings.font_color, bg = settings.back_color)
 		self.slot_A_LED_text.grid(row = 0, column = 0)
+
 		options_slotA_LED = ('LED NONE', 'LED 1', 'LED 2', 'LED 3')
 		self.default_options_slotA_LED = tk.StringVar()
 		self.default_options_slotA_LED.set(options_slotA_LED[0])
+
 		self.slot_A_LED_option_menu = tk.OptionMenu(self.frame_slot_A_LED_control_box_A, self.default_options_slotA_LED, *options_slotA_LED)
 		self.slot_A_LED_option_menu.configure(fg= settings.font_color, bg = settings.back_color)
 		self.slot_A_LED_option_menu["highlightthickness"] = 0
-		self.slot_A_LED_option_menu.grid(row = 0, column = 1)
+		self.slot_A_LED_option_menu.grid(row = 0, column = 1, sticky = tk.W+tk.E+tk.N+tk.S)
 
 		self.slot_A_LED_status_text = tk.Label(self.frame_slot_A_LED_control_box_A, text = "LED Status",
 			fg= settings.font_color, bg = settings.back_color)
@@ -152,14 +187,14 @@ class ppg_highlevel:
 		self.slot_A_LED_status_option_menu = tk.OptionMenu(self.frame_slot_A_LED_control_box_A, self.default_options_slotA_LED_status, *options_slotA_LED_status)
 		self.slot_A_LED_status_option_menu.configure(fg= settings.font_color, bg = settings.back_color)
 		self.slot_A_LED_status_option_menu["highlightthickness"] = 0
-		self.slot_A_LED_status_option_menu.grid(row = 1, column = 1)
+		self.slot_A_LED_status_option_menu.grid(row = 1, column = 1, sticky = tk.W+tk.E+tk.N+tk.S)
 
 		self.num_pulses_slot_A_text = tk.Label(self.frame_slot_A_LED_control_box_A, text = "Number of Pulses",
 			fg= settings.font_color, bg = settings.back_color)
 		self.num_pulses_slot_A_text.grid(row = 2, column = 0)
 		self.num_pulses_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_LED_control_box_A, from_ = 0, to = 100, increment = 1, 
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.num_pulses_slot_A_spinbox.grid(row = 2, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.num_pulses_slot_A_spinbox.grid(row = 2, column = 1, sticky = tk.W+tk.E+tk.N+tk.S)
 
 		self.frame_slot_A_LED_control_box_B = tk.LabelFrame(self.frame_slot_A_LED_control, bg = settings.back_color)
 		self.frame_slot_A_LED_control_box_B.grid(row = 1, column = 0)
@@ -167,7 +202,7 @@ class ppg_highlevel:
 		self.slot_A_TIA_gain_text = tk.Label(self.frame_slot_A_LED_control_box_B, text = "TIA Gain",
 			fg= settings.font_color, bg = settings.back_color)
 		self.slot_A_TIA_gain_text.grid(row = 0, column = 0)
-		options_slot_A_TIA_gain = ('X', 'Y', 'Z')
+		options_slot_A_TIA_gain = ('25k','50k','100k','200k')
 
 		self.default_options_slot_A_TIA_gain = tk.StringVar()
 		self.default_options_slot_A_TIA_gain.set(options_slot_A_TIA_gain[0])
@@ -180,7 +215,9 @@ class ppg_highlevel:
 	def frame_slot_B_LED_control(self, master):
 		self.frame_slot_B_LED_control = tk.LabelFrame(master, bd = 2, text = "LED Control",
 			fg= settings.font_color, bg = settings.back_color)
-		self.frame_slot_B_LED_control.grid(row = 0, column = 0, pady = 10, padx = 5)
+		self.frame_slot_B_LED_control.grid(row = 0, column = 0, pady = 10, padx = 5, sticky = tk.N + tk.W + tk.E + tk.S)
+		self.frame_slot_B_LED_control.columnconfigure(0, weight = 1)
+		self.frame_slot_B_LED_control.columnconfigure(1, weight = 1)
 
 		self.frame_slot_B_LED_control_box_A = tk.LabelFrame(self.frame_slot_B_LED_control, bd = 2,
 			fg= settings.font_color, bg = settings.back_color)
@@ -195,7 +232,7 @@ class ppg_highlevel:
 		self.slot_B_LED_option_menu = tk.OptionMenu(self.frame_slot_B_LED_control_box_A, self.default_options_slotB_LED, *options_slotB_LED)
 		self.slot_B_LED_option_menu.configure(fg= settings.font_color, bg = settings.back_color)
 		self.slot_B_LED_option_menu["highlightthickness"] = 0
-		self.slot_B_LED_option_menu.grid(row = 0, column = 1)
+		self.slot_B_LED_option_menu.grid(row = 0, column = 1, sticky = tk.W+tk.E+tk.N+tk.S)
 
 		self.slot_B_LED_status_text = tk.Label(self.frame_slot_B_LED_control_box_A, text = "LED Status",
 			fg= settings.font_color, bg = settings.back_color)
@@ -207,14 +244,14 @@ class ppg_highlevel:
 		self.slot_B_LED_status_option_menu = tk.OptionMenu(self.frame_slot_B_LED_control_box_A, self.default_options_slotB_LED_status, *options_slotB_LED_status)
 		self.slot_B_LED_status_option_menu.configure(fg= settings.font_color, bg = settings.back_color)
 		self.slot_B_LED_status_option_menu["highlightthickness"] = 0
-		self.slot_B_LED_status_option_menu.grid(row = 1, column = 1)
+		self.slot_B_LED_status_option_menu.grid(row = 1, column = 1, sticky = tk.W+tk.E+tk.N+tk.S)
 
 		self.num_pulses_slot_B_text = tk.Label(self.frame_slot_B_LED_control_box_A, text = "Number of Pulses",
 			fg= settings.font_color, bg = settings.back_color)
 		self.num_pulses_slot_B_text.grid(row = 2, column = 0)
 		self.num_pulses_slot_B_spinbox = tk.Spinbox(self.frame_slot_B_LED_control_box_A, from_ = 0, to = 100, increment = 1,
-		 width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.num_pulses_slot_B_spinbox.grid(row = 2, column = 1)
+		 width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.num_pulses_slot_B_spinbox.grid(row = 2, column = 1, sticky = tk.W+tk.E+tk.N+tk.S)
 
 		self.frame_slot_B_LED_control_box_B = tk.LabelFrame(self.frame_slot_B_LED_control, bg = settings.back_color)
 		self.frame_slot_B_LED_control_box_B.grid(row = 1, column = 0)
@@ -222,7 +259,7 @@ class ppg_highlevel:
 		self.slot_B_TIA_gain_text = tk.Label(self.frame_slot_B_LED_control_box_B, text = "TIA Gain",
 			fg= settings.font_color, bg = settings.back_color)
 		self.slot_B_TIA_gain_text.grid(row = 0, column = 0)
-		options_slot_B_TIA_gain = ('X', 'Y', 'Z')
+		options_slot_B_TIA_gain = ('25k','50k','100k','200k')
 
 		self.default_options_slot_B_TIA_gain = tk.StringVar()
 		self.default_options_slot_B_TIA_gain.set(options_slot_B_TIA_gain[0])
@@ -236,99 +273,105 @@ class ppg_highlevel:
 		self.frame_slot_A_timing_control = tk.LabelFrame(master, bd = 2, text = "Timing Control",
 			fg= settings.font_color, bg = settings.back_color)
 		self.frame_slot_A_timing_control.grid(row = 0, column = 1, pady = 10, padx = 5, sticky=tk.W+tk.E+tk.N+tk.S)
+		self.frame_slot_A_timing_control.columnconfigure(0, weight = 3)
+		self.frame_slot_A_timing_control.columnconfigure(1, weight = 1)
 
 		self.AFE_width_slot_A_text = tk.Label(self.frame_slot_A_timing_control, text = "AFE Width (us)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.AFE_width_slot_A_text.grid(row = 0, column = 0)
 		self.AFE_width_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_timing_control, from_ = 0, to = 100, increment = 1,
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.AFE_width_slot_A_spinbox.grid(row = 0, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.AFE_width_slot_A_spinbox.grid(row = 0, column = 1, sticky = tk.W+tk.E)
 
 		self.pulse_width_slot_A_text = tk.Label(self.frame_slot_A_timing_control, text = "Pulse Width (us)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.pulse_width_slot_A_text.grid(row = 1, column = 0)
 		self.pulse_width_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_timing_control, from_ = 0, to = 100, increment = 1, 
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.pulse_width_slot_A_spinbox.grid(row = 1, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.pulse_width_slot_A_spinbox.grid(row = 1, column = 1, sticky = tk.W+tk.E)
 
 		self.pulse_offset_slot_A_text = tk.Label(self.frame_slot_A_timing_control, text = "Pulse Offset (us)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.pulse_offset_slot_A_text.grid(row = 2, column = 0)
 		self.pulse_offset_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_timing_control, from_ = 0, to = 100, increment = 1, 
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.pulse_offset_slot_A_spinbox.grid(row = 2, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.pulse_offset_slot_A_spinbox.grid(row = 2, column = 1, sticky = tk.W+tk.E)
 
 		self.AFE_offset_slot_A_text = tk.Label(self.frame_slot_A_timing_control, text = "AFE Offset (us)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.AFE_offset_slot_A_text.grid(row = 3, column = 0)
 		self.AFE_offset_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_timing_control, from_ = 0, to = 100, increment = 1,
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.AFE_offset_slot_A_spinbox.grid(row = 3, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.AFE_offset_slot_A_spinbox.grid(row = 3, column = 1, sticky = tk.W+tk.E)
 
 		self.fine_AFE_offset_slot_A_text = tk.Label(self.frame_slot_A_timing_control, text = "AFE Fine Offset (ns)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.fine_AFE_offset_slot_A_text.grid(row = 4, column = 0)
 		self.fine_AFE_offset_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_timing_control, from_ = 0.00, to = 100.00, increment = .01, 
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.fine_AFE_offset_slot_A_spinbox.grid(row = 4, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.fine_AFE_offset_slot_A_spinbox.grid(row = 4, column = 1, sticky = tk.W+tk.E)
 
 	def frame_slot_B_timing_control(self,master):
 		self.frame_slot_B_timing_control = tk.LabelFrame(master, bd = 2, text = "Timing Control",
 			fg= settings.font_color, bg = settings.back_color)
 		self.frame_slot_B_timing_control.grid(row = 0, column = 1, pady = 10, padx = 5, sticky=tk.W+tk.E+tk.N+tk.S)
+		self.frame_slot_B_timing_control.columnconfigure(0, weight = 3)
+		self.frame_slot_B_timing_control.columnconfigure(1, weight = 1)
 
 		self.AFE_width_slot_B_text = tk.Label(self.frame_slot_B_timing_control, text = "AFE Width (us)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.AFE_width_slot_B_text.grid(row = 0, column = 0)
 		self.AFE_width_slot_B_spinbox = tk.Spinbox(self.frame_slot_B_timing_control, from_ = 0, to = 100, increment = 1,
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.AFE_width_slot_B_spinbox.grid(row = 0, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.AFE_width_slot_B_spinbox.grid(row = 0, column = 1, sticky = tk.W+tk.E)
 
 		self.pulse_width_slot_B_text = tk.Label(self.frame_slot_B_timing_control, text = "Pulse Width (us)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.pulse_width_slot_B_text.grid(row = 1, column = 0)
 		self.pulse_width_slot_B_spinbox = tk.Spinbox(self.frame_slot_B_timing_control, from_ = 0, to = 100, increment = 1, 
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.pulse_width_slot_B_spinbox.grid(row = 1, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.pulse_width_slot_B_spinbox.grid(row = 1, column = 1, sticky = tk.W+tk.E)
 
 		self.pulse_offset_slot_B_text = tk.Label(self.frame_slot_B_timing_control, text = "Pulse Offset (us)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.pulse_offset_slot_B_text.grid(row = 2, column = 0)
 		self.pulse_offset_slot_B_spinbox = tk.Spinbox(self.frame_slot_B_timing_control, from_ = 0, to = 100, increment = 1,
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.pulse_offset_slot_B_spinbox.grid(row = 2, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.pulse_offset_slot_B_spinbox.grid(row = 2, column = 1, sticky = tk.W+tk.E)
 
 		self.AFE_offset_slot_B_text = tk.Label(self.frame_slot_B_timing_control, text = "AFE Offset (us)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.AFE_offset_slot_B_text.grid(row = 3, column = 0)
 		self.AFE_offset_slot_B_spinbox = tk.Spinbox(self.frame_slot_B_timing_control, from_ = 0, to = 100, increment = 1,
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.AFE_offset_slot_B_spinbox.grid(row = 3, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.AFE_offset_slot_B_spinbox.grid(row = 3, column = 1, sticky = tk.W+tk.E)
 
 		self.AFE_fine_offset_slot_B_text = tk.Label(self.frame_slot_B_timing_control, text = "AFE Fine Offset (ns)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.AFE_fine_offset_slot_B_text.grid(row = 4, column = 0)
 		self.AFE_fine_offset_slot_B_spinbox = tk.Spinbox(self.frame_slot_B_timing_control, from_ = 0.00, to = 100.00, increment = .01, 
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
-		self.AFE_fine_offset_slot_B_spinbox.grid(row = 4, column = 1)
+			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.AFE_fine_offset_slot_B_spinbox.grid(row = 4, column = 1, sticky = tk.W+tk.E)
 
 	def frame_all_LED_currents(self, master):
 		self.frame_all_LED_currents = tk.LabelFrame(master, bd = 0, 
 			fg= settings.font_color, bg = settings.back_color)
-		self.frame_all_LED_currents.grid(row = 5, column = 1, columnspan = 5, sticky = tk.W+tk.E+tk.N+tk.S)
+		self.frame_all_LED_currents.grid(row = 5, column = 0, columnspan = 2, 
+			sticky = tk.W+tk.E+tk.N+tk.S)
 		self.frame_all_LED_currents.columnconfigure(0, weight=1)
 		self.frame_all_LED_currents.columnconfigure(1, weight=1)
 		self.frame_all_LED_currents.columnconfigure(2, weight=1)
 		self.frame_all_LED_currents.columnconfigure(3, weight=1)
+		self.frame_all_LED_currents.columnconfigure(4, weight=1)
 
 		self.frame_LED_1_current(self.frame_all_LED_currents)
 		self.frame_LED_2_current(self.frame_all_LED_currents)
 		self.frame_LED_3_current(self.frame_all_LED_currents)
 
 		self.apply_ppg_changes_high_level = tk.Button(self.frame_all_LED_currents, text = "Apply",
-		 fg= settings.font_color, bg = settings.back_color)
+		 fg= settings.font_color, bg = settings.back_color, padx = 10, pady = 10)
 		self.apply_ppg_changes_high_level.config(font=(10))
-		self.apply_ppg_changes_high_level.grid(row =0, column = 4, pady = 10, padx = 15)
+		self.apply_ppg_changes_high_level.grid(row = 0, column = 3)
 
 	def frame_LED_1_current(self, master):
 		self.frame_LED_1_current = tk.LabelFrame(master, text = "LED 1 Current",
@@ -401,7 +444,7 @@ class ppg_highlevel:
 		self.LED_2_I_LED_coarse_option_menu = tk.OptionMenu(self.frame_LED_2_coarse_scale, 
 			self.default_options_LED_2_I_LED_coarse, *options_LED_2_I_LED_coarse)
 		self.LED_2_I_LED_coarse_option_menu.configure(fg= settings.font_color, bg = settings.back_color)
-		self.LED_2_I_LED_coarse_option_menu["highlightthickness"]=0
+		self.LED_2_I_LED_coarse_option_menu["highlightthickness"] = 0
 		self.LED_2_I_LED_coarse_option_menu.grid(row = 0, column = 1)
 
 		self.LED_2_scale_factor_text = tk.Label(self.frame_LED_2_coarse_scale, text = "Scale Factor",
@@ -414,7 +457,7 @@ class ppg_highlevel:
 		self.LED_2_scale_factor_option_menu = tk.OptionMenu(self.frame_LED_2_coarse_scale, self.default_options_LED_2_scale_factor, 
 			*options_LED_2_scale_factor)
 		self.LED_2_scale_factor_option_menu.configure(fg= settings.font_color, bg = settings.back_color)
-		self.LED_2_scale_factor_option_menu["highlightthickness"]=0
+		self.LED_2_scale_factor_option_menu["highlightthickness"] = 0
 		self.LED_2_scale_factor_option_menu.grid(row = 1, column = 1)
 
 		self.LED_2_scale = tk.Scale(self.frame_LED_2_current, orient=tk.HORIZONTAL, 
