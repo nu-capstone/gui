@@ -37,7 +37,9 @@ def heartbox_uart_receive(q):
 	print ser
 	# asdfasdf
 
-	filename = "PPG and ECG Demo 091917.dcfg"
+	filename = "RI_DEFAULT.dcfg"
+	filename =  "R01_142RI.dcfg"
+
 
 	with open(filename) as inputfile:
 		for line in inputfile:
@@ -58,10 +60,10 @@ def heartbox_uart_receive(q):
 	#ser.readline()
 	#ser.readline()
 
-	ser.write('w 36 0290\n') # 1 pulse timeslot B
-	ser.readline()
-	ser.readline()
-	ser.readline()
+	# ser.write('w 36 0290\n') # 1 pulse timeslot B
+	# ser.readline()
+	# ser.readline()
+	# ser.readline()
 
 	#ser.write('w 44 1C26\n') # reduce gain to 25k
 	#ser.readline()
@@ -72,7 +74,7 @@ def heartbox_uart_receive(q):
 
 	time.sleep(1)
 
-	ser.write('t c c\n')
+	ser.write('t a a\n')
 	ser.readline()
 
 	time.sleep(1)

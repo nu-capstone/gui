@@ -70,7 +70,7 @@ class heartbox_wave_viewer:
 
 	def startup(self):
 		if (settings.isComm):
-			self.simulate=multiprocessing.Process(None,heartbox_comm.heartbox_udp_receive,args=(settings.q,))
+			self.simulate=multiprocessing.Process(None,heartbox_comm.heartbox_uart_receive,args=(settings.q,))
 			self.simulate.start()
 			self.read_live_samples()
 		else:
@@ -345,9 +345,9 @@ class heartbox_wave_viewer:
 		
 	#defines internal layout of vitals
 	def vitals_layout(self):
-		self.heartbeat_var = tk.IntVar() # initialize metric variables
+		self.heartbeat_var = tk.StringVar() # initialize metric variables
 		self.SP02_var = tk.StringVar()
-		self.temp_var = tk.IntVar()
+		self.HRV_var = tk.StringVar()
 		self.pulse_transit_var = tk.IntVar()
 		self.abnormal_var = tk.StringVar()
 
@@ -356,7 +356,7 @@ class heartbox_wave_viewer:
 
 		self.heartbeat_var = np.random.randint(40, 60)
 		self.SP02_var = (self.dsp.SP02_value)
-		self.temp_var = np.random.randint(98, 102)
+		self.HRV_var = np.random.randint(98, 102)
 		self.pulse_transit_var = np.random.randint(50, 55)
 		self.abnormal_var = settings.condition_set[np.random.randint(0, 3)]
 
@@ -367,7 +367,7 @@ class heartbox_wave_viewer:
 		
 		self.heartbeat_var_max = self.heartbeat_var
 		self.SP02_var_max = self.SP02_var
-		self.temp_var_max = self.temp_var
+		self.temp_var_max = self.HRV_var
 		self.ptt_var_max = self.pulse_transit_var
 
 		self.root.columnconfigure(0, weight = 7) #Used to allow for widgets to scale with window resolution. This is the column with the graph widgets
@@ -426,7 +426,7 @@ class heartbox_wave_viewer:
 			self.vitals_subtitle_font, anchor = "w", fg=settings.font_color, bg = settings.back_color)
 		self.SP02_text = tk.Label(self.SP02_frame, text = "SPO2 (%)", font = self.vitals_subtitle_font,
 			anchor ="w", fg=settings.font_color, bg = settings.back_color)
-		self.temp_text = tk.Label(self.temp_frame, text = "TEMP (" + settings.deg + "F)", 
+		self.temp_text = tk.Label(self.temp_frame, text = "HRV", 
 			font = self.vitals_subtitle_font, anchor ="w", fg=settings.font_color, bg = settings.back_color)
 		self.pulse_transit_text = tk.Label(self.pulse_transit_frame, text = "PULSE TT (MS)", 
 			font = self.vitals_subtitle_font, anchor ="w",  fg=settings.font_color, bg = settings.back_color)
@@ -568,6 +568,23 @@ class heartbox_wave_viewer:
 				self.SP02_max_value.configure(text = self.SP02_var_max)
 		else:
 			self.SP02_label.configure(text = '--')
+
+		if(self.dsp.HR_valid):
+			print self.dsp.HR_value, self.dsp.HRV_value
+			self.heartbeat_var = self.dsp.HR_value
+			self.HRV_var = self.dsp.HRV_value
+			self.heartbeat_label.configure(text = self.heartbeat_var)
+			self.temp_label.configure(text = self.HRV_var)
+			# if(self.SP02_var < self.SP02_var_min):
+			# 	self.SP02_var_min = self.SP02_var
+			# 	self.SP02_min_value.configure(text = self.SP02_var_min)
+			# if(self.SP02_var > self.SP02_var_max):
+			# 	self.SP02_var_max = self.SP02_var
+			# 	self.SP02_max_value.configure(text = self.SP02_var_max)
+		else:
+			self.heartbeat_label.configure(text = '--')
+			self.temp_label.configure(text = '--')
+
 		# self.temp_label.configure(text = self.temp_var)
 		# self.pulse_transit_label.configure(text = self.pulse_transit_var)
 		# self.abnormal_label.configure(text = self.abnormal_var)
@@ -603,13 +620,13 @@ class heartbox_wave_viewer:
 			elif(self.ppg_data[self.n] < self.ppg_min):
 				self.ppg_min = self.ppg_data[self.n] - 500
 			if(self.ppg_R_data[self.n] > self.ppg_R_max):
-				self.ppg_R_max = self.ppg_R_data[self.n] + 500
+				self.ppg_R_max = self.ppg_R_data[self.n] + 200
 			elif(self.ppg_R_data[self.n] < self.ppg_R_min):
-				self.ppg_R_min = self.ppg_R_data[self.n] - 500
+				self.ppg_R_min = self.ppg_R_data[self.n] - 200
 			if(self.ppg_IR_data[self.n] > self.ppg_IR_max):
-				self.ppg_IR_max = self.ppg_IR_data[self.n] + 500
+				self.ppg_IR_max = self.ppg_IR_data[self.n] + 200
 			elif(self.ppg_IR_data[self.n] < self.ppg_IR_min):
-				self.ppg_IR_min = self.ppg_IR_data[self.n] - 500
+				self.ppg_IR_min = self.ppg_IR_data[self.n] - 200
 			limY1 = self.ecg_ax.set_ylim([self.ecg_min, self.ecg_max])
 			limY2 = self.ppg_ax.set_ylim([self.ppg_min, self.ppg_max])
 			limY3 = self.ppg_R_ax.set_ylim([self.ppg_R_min, self.ppg_R_max])
@@ -662,12 +679,12 @@ class heartbox_wave_viewer:
 
 			if(self.ppg_R_max - self.ppg_R_min < 10000):
 				if(self.ppg_R_data[self.n] > self.ppg_R_max):
-					self.ppg_R_max = self.ppg_R_data[self.n] + 500
+					self.ppg_R_max = self.ppg_R_data[self.n] + 200
 					limY2 = self.ppg_R_ax.set_ylim([self.ppg_R_min, self.ppg_R_max])
 					self.ppg_R_fig.canvas.draw()
 
 				elif(self.ppg_R_data[self.n] < self.ppg_R_min):
-					self.ppg_R_min = self.ppg_R_data[self.n] - 500
+					self.ppg_R_min = self.ppg_R_data[self.n] - 200
 					limY2 = self.ppg_R_ax.set_ylim([self.ppg_R_min, self.ppg_R_max])
 					self.ppg_R_fig.canvas.draw()
 				else:
@@ -681,12 +698,12 @@ class heartbox_wave_viewer:
 			
 			if(self.ppg_IR_max - self.ppg_IR_min < 10000):
 				if(self.ppg_IR_data[self.n] > self.ppg_IR_max):
-					self.ppg_IR_max = self.ppg_IR_data[self.n] + 500
+					self.ppg_IR_max = self.ppg_IR_data[self.n] + 200
 					limY2 = self.ppg_IR_ax.set_ylim([self.ppg_IR_min, self.ppg_IR_max])
 					self.ppg_IR_fig.canvas.draw()
 
 				elif(self.ppg_IR_data[self.n] < self.ppg_IR_min):
-					self.ppg_IR_min = self.ppg_IR_data[self.n] - 500
+					self.ppg_IR_min = self.ppg_IR_data[self.n] - 200
 					limY2 = self.ppg_IR_ax.set_ylim([self.ppg_IR_min, self.ppg_IR_max])
 					self.ppg_IR_fig.canvas.draw()
 				else:
@@ -714,7 +731,7 @@ class heartbox_wave_viewer:
 				if(self.android_connect_state):
 					heartbox_comm.heartbox_bt_send(pack('ff', filtered_ecg, filtered_ppg))
 
-				self.heartbox_var = self.dsp.calc_heartrate()
+				#self.heartbox_var = self.dsp.calc_heartrate()
 
 				self.ppg_data = np.append(self.ppg_data, filtered_ppg)
 				self.ecg_data = np.append(self.ecg_data, filtered_ecg)

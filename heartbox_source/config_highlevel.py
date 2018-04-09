@@ -5,9 +5,12 @@ import ttk
 import settings
 from PIL import Image, ImageTk
 import pdb
+import subprocess
+import os
 
 class config_highlevel:
 	def __init__(self): 
+		self.path = os.path.dirname(os.path.abspath(__file__))
 		config_highlevel = tk.Toplevel()
 		config_highlevel.configure(bg = settings.back_color)
 		config_highlevel.minsize(width = 900, height = 600)
@@ -86,8 +89,9 @@ class config_highlevel:
 		self.frame_ppg_right.columnconfigure(1, weight = 1)
 		self.frame_ppg_right.columnconfigure(2, weight = 1)
 
-		self.sampling_freq_text = tk.Label(self.frame_ppg_left, text = "Sampling Frequency",
-			fg= settings.font_color, bg = settings.back_color)
+		self.sampling_freq_text = tk.Button(self.frame_ppg_left, text = "Sampling Frequency",
+			fg= settings.font_color, bg = settings.back_color, activebackground= settings.back_color,
+			bd = 0, command= lambda: self.open_adpd103_docs('22'))
 		self.sampling_freq_text.grid(row = 0, column = 1, sticky = tk.W)
 		self.sampling_freq_spinbox = tk.Spinbox(self.frame_ppg_left, from_ = 1, to = 100, increment =1, 
 			width = 5 , fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
@@ -96,7 +100,14 @@ class config_highlevel:
 		self.int_average_text = tk.Label(self.frame_ppg_left, text = "Internal Average",
 			fg= settings.font_color, bg = settings.back_color)
 		self.int_average_text.grid(row = 1, column = 1, sticky = tk.W)
-		int_average_slotA = ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15', '16')
+		int_average_slotA = ('1',
+			'2',
+			'4',
+			'8',
+			'16', 
+			'32',
+			'64',
+			'128')
 		self.default_int_average_slotA = tk.StringVar()
 
 		self.default_int_average_slotA.set(int_average_slotA[0])
@@ -108,7 +119,16 @@ class config_highlevel:
 		self.slot_mode_A_text = tk.Label(self.frame_ppg_right, text = "Slot_Mode A",
 			fg= settings.font_color, bg = settings.back_color)
 		self.slot_mode_A_text.grid(row = 0, column = 0)
-		options_slotA = ('X', 'Y', 'Z')
+		options_slotA = ('ADPDDrv_SLOT_OFF', 
+			'ADPDDrv_4CH_16',
+			'ADPDDrv_4CH_32',
+			'ADPDDrv_SUM_16',
+			'ADPDDrv_SUM_32',
+			'ADPDDrv_DIM1_16',
+			'ADPDDrv_DIM1_32',			
+			'ADPDDrv_DIM2_16',
+			'ADPDDrv_DIM2_32',
+			'ADPDDrv_PROXIMITY')
 
 		self.default_option_slotA = tk.StringVar()
 		self.default_option_slotA.set(options_slotA[0])
@@ -120,7 +140,16 @@ class config_highlevel:
 		self.slot_mode_B_text = tk.Label(self.frame_ppg_right, text = "Slot_Mode B",
 			fg= settings.font_color, bg = settings.back_color)
 		self.slot_mode_B_text.grid(row = 1, column = 0)
-		options_slotB = ('X', 'Y', 'Z')
+		options_slotB = ('ADPDDrv_SLOT_OFF', 
+			'ADPDDrv_4CH_16',
+			'ADPDDrv_4CH_32',
+			'ADPDDrv_SUM_16',
+			'ADPDDrv_SUM_32',
+			'ADPDDrv_DIM1_16',
+			'ADPDDrv_DIM1_32',			
+			'ADPDDrv_DIM2_16',
+			'ADPDDrv_DIM2_32')
+
 		self.default_option_slotB = tk.StringVar()
 		self.default_option_slotB.set(options_slotB[0])
 
@@ -307,8 +336,9 @@ class config_highlevel:
 		self.fine_AFE_offset_slot_A_text = tk.Label(self.frame_slot_A_timing_control, text = "AFE Fine Offset (ns)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.fine_AFE_offset_slot_A_text.grid(row = 4, column = 0)
-		self.fine_AFE_offset_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_timing_control, from_ = 0.00, to = 100.00, increment = .01, 
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.fine_AFE_offset_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_timing_control, from_ = 0.00, to = 1000.00, increment = 31.25, 
+			width = 5, fg= settings.font_color, bg = settings.back_color, format = '%.2f',
+			buttonbackground = settings.back_color, justify = tk.RIGHT)
 		self.fine_AFE_offset_slot_A_spinbox.grid(row = 4, column = 1, sticky = tk.W+tk.E)
 
 	def frame_slot_B_timing_control(self,master):
@@ -349,8 +379,9 @@ class config_highlevel:
 		self.AFE_fine_offset_slot_B_text = tk.Label(self.frame_slot_B_timing_control, text = "AFE Fine Offset (ns)",
 			fg= settings.font_color, bg = settings.back_color)
 		self.AFE_fine_offset_slot_B_text.grid(row = 4, column = 0)
-		self.AFE_fine_offset_slot_B_spinbox = tk.Spinbox(self.frame_slot_B_timing_control, from_ = 0.00, to = 100.00, increment = .01, 
-			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
+		self.AFE_fine_offset_slot_B_spinbox = tk.Spinbox(self.frame_slot_B_timing_control, from_ = 0.00, to = 1000.00, increment = 31.25,
+			width = 5, fg= settings.font_color, bg = settings.back_color, format = '%.2f',
+			buttonbackground = settings.back_color, justify = tk.RIGHT)
 		self.AFE_fine_offset_slot_B_spinbox.grid(row = 4, column = 1, sticky = tk.W+tk.E)
 
 	def frame_all_LED_currents(self, master):
@@ -384,7 +415,23 @@ class config_highlevel:
 		self.LED_1_I_LED_coarse_text = tk.Label(self.frame_LED_1_coarse_scale, text = "I_LED Coarse",
 			fg= settings.font_color, bg = settings.back_color)
 		self.LED_1_I_LED_coarse_text.grid(row = 0, column = 0)
-		options_LED_1_I_LED_coarse = ('X', 'Y', 'Z')
+		options_LED_1_I_LED_coarse = ('25', 
+			'40', 
+			'55',
+			'70', 
+			'85',
+			'100', 
+			'115',
+			'130', 
+			'145',
+			'160', 
+			'175',
+			'190', 
+			'205',
+			'220', 
+			'235',
+			'250')
+
 		self.default_options_LED_1_I_LED_coarse= tk.StringVar()
 		self.default_options_LED_1_I_LED_coarse.set(options_LED_1_I_LED_coarse[0])
 
@@ -398,7 +445,7 @@ class config_highlevel:
 			fg= settings.font_color, bg = settings.back_color)
 		self.LED_1_scale_factor_text.grid(row = 1, column = 0)
 
-		options_LED_1_scale_factor = ('X', 'Y', 'Z')
+		options_LED_1_scale_factor = ('40%', '100%')
 		self.default_options_LED_1_scale_factor= tk.StringVar()
 		self.default_options_LED_1_scale_factor.set(options_LED_1_scale_factor[0])
 		self.LED_1_scale_factor_option_menu = tk.OptionMenu(self.frame_LED_1_coarse_scale, self.default_options_LED_1_scale_factor, 
@@ -437,7 +484,23 @@ class config_highlevel:
 		self.LED_2_I_LED_coarse_text = tk.Label(self.frame_LED_2_coarse_scale, text = "I_LED Coarse",
 			fg= settings.font_color, bg = settings.back_color)
 		self.LED_2_I_LED_coarse_text.grid(row = 0, column = 0)
-		options_LED_2_I_LED_coarse = ('X', 'Y', 'Z')
+		options_LED_2_I_LED_coarse = ('25', 
+			'40', 
+			'55',
+			'70', 
+			'85',
+			'100', 
+			'115',
+			'130', 
+			'145',
+			'160', 
+			'175',
+			'190', 
+			'205',
+			'220', 
+			'235',
+			'250')
+
 		self.default_options_LED_2_I_LED_coarse= tk.StringVar()
 		self.default_options_LED_2_I_LED_coarse.set(options_LED_2_I_LED_coarse[0])
 
@@ -450,7 +513,7 @@ class config_highlevel:
 		self.LED_2_scale_factor_text = tk.Label(self.frame_LED_2_coarse_scale, text = "Scale Factor",
 			fg= settings.font_color, bg = settings.back_color)
 		self.LED_2_scale_factor_text.grid(row = 1, column = 0)
-		options_LED_2_scale_factor = ('X', 'Y', 'Z')
+		options_LED_2_scale_factor = ('40%', '100%')
 		self.default_options_LED_2_scale_factor= tk.StringVar()
 		self.default_options_LED_2_scale_factor.set(options_LED_2_scale_factor[0])
 
@@ -492,7 +555,23 @@ class config_highlevel:
 		self.LED_3_I_LED_coarse_text = tk.Label(self.frame_LED_3_coarse_scale, text = "I_LED Coarse",
 			fg= settings.font_color, bg = settings.back_color)
 		self.LED_3_I_LED_coarse_text.grid(row = 0, column = 0)
-		options_LED_3_I_LED_coarse = ('X', 'Y', 'Z')
+		options_LED_3_I_LED_coarse = ('25', 
+			'40', 
+			'55',
+			'70', 
+			'85',
+			'100', 
+			'115',
+			'130', 
+			'145',
+			'160', 
+			'175',
+			'190', 
+			'205',
+			'220', 
+			'235',
+			'250')
+
 		self.default_options_LED_3_I_LED_coarse= tk.StringVar()
 		self.default_options_LED_3_I_LED_coarse.set(options_LED_3_I_LED_coarse[0])
 
@@ -505,7 +584,7 @@ class config_highlevel:
 		self.LED_3_scale_factor_text = tk.Label(self.frame_LED_3_coarse_scale, text = "Scale Factor",
 			fg= settings.font_color, bg = settings.back_color)
 		self.LED_3_scale_factor_text.grid(row = 1, column = 0)
-		options_LED_3_scale_factor = ('X', 'Y', 'Z')
+		options_LED_3_scale_factor = ('40%', '100%')
 		self.default_options_LED_3_scale_factor= tk.StringVar()
 		self.default_options_LED_3_scale_factor.set(options_LED_3_scale_factor[0])
 
@@ -536,5 +615,9 @@ class config_highlevel:
 
 		self.LED_3_mA_text.grid(row = 0, column = 2, sticky = tk.E)
 
-	def show(self):
-		self.lift()
+	def open_adpd103_docs(self, pageString):
+		pdf_link = '\ADPD105-106-107.pdf' + "\"#page=22\""
+
+		print pageString
+		subprocess.Popen([path + pdf_link],shell=True)
+
