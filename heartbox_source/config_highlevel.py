@@ -7,6 +7,8 @@ from PIL import Image, ImageTk
 import pdb
 import subprocess
 import os
+import webbrowser
+chrome_path = 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe %s'
 
 class config_highlevel:
 	def __init__(self): 
@@ -97,8 +99,8 @@ class config_highlevel:
 			width = 5 , fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color)
 		self.sampling_freq_spinbox.grid(row = 0, column = 2, sticky = tk.W)
 
-		self.int_average_text = tk.Label(self.frame_ppg_left, text = "Internal Average",
-			fg= settings.font_color, bg = settings.back_color)
+		self.int_average_text = tk.Button(self.frame_ppg_left, text = "Internal Average",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, command= lambda: self.open_adpd103_docs('23'))
 		self.int_average_text.grid(row = 1, column = 1, sticky = tk.W)
 		int_average_slotA = ('1',
 			'2',
@@ -116,8 +118,8 @@ class config_highlevel:
 		self.slot_mode_A_int_average.configure(fg= settings.font_color, bg = settings.back_color)
 		self.slot_mode_A_int_average.grid(row = 1, column = 2, sticky = tk.W)
 
-		self.slot_mode_A_text = tk.Label(self.frame_ppg_right, text = "Slot_Mode A",
-			fg= settings.font_color, bg = settings.back_color)
+		self.slot_mode_A_text = tk.Button(self.frame_ppg_right, text = "Slot_Mode A",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, command= lambda: self.open_adpd103_docs('19'))
 		self.slot_mode_A_text.grid(row = 0, column = 0)
 		options_slotA = ('ADPDDrv_SLOT_OFF', 
 			'ADPDDrv_4CH_16',
@@ -137,8 +139,9 @@ class config_highlevel:
 		self.slot_mode_A_optionmenu["highlightthickness"]=0
 		self.slot_mode_A_optionmenu.grid(row = 0, column = 1)
 
-		self.slot_mode_B_text = tk.Label(self.frame_ppg_right, text = "Slot_Mode B",
-			fg= settings.font_color, bg = settings.back_color)
+		self.slot_mode_B_text = tk.Button(self.frame_ppg_right, text = "Slot_Mode B",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, 
+			command= lambda: self.open_adpd103_docs('19'))
 		self.slot_mode_B_text.grid(row = 1, column = 0)
 		options_slotB = ('ADPDDrv_SLOT_OFF', 
 			'ADPDDrv_4CH_16',
@@ -193,8 +196,9 @@ class config_highlevel:
 			bd = 2, fg= settings.font_color, bg = settings.back_color)
 		self.frame_slot_A_LED_control_box_A.grid(row = 0, column = 0, pady = 10, padx = 5)
 
-		self.slot_A_LED_text = tk.Label(self.frame_slot_A_LED_control_box_A, text = "LED",
-			fg= settings.font_color, bg = settings.back_color)
+		self.slot_A_LED_text = tk.Button(self.frame_slot_A_LED_control_box_A, text = "LED",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, 
+			command= lambda: self.open_adpd103_docs('31'))
 		self.slot_A_LED_text.grid(row = 0, column = 0)
 
 		options_slotA_LED = ('LED NONE', 'LED 1', 'LED 2', 'LED 3')
@@ -218,8 +222,9 @@ class config_highlevel:
 		self.slot_A_LED_status_option_menu["highlightthickness"] = 0
 		self.slot_A_LED_status_option_menu.grid(row = 1, column = 1, sticky = tk.W+tk.E+tk.N+tk.S)
 
-		self.num_pulses_slot_A_text = tk.Label(self.frame_slot_A_LED_control_box_A, text = "Number of Pulses",
-			fg= settings.font_color, bg = settings.back_color)
+		self.num_pulses_slot_A_text = tk.Button(self.frame_slot_A_LED_control_box_A, text = "Number of Pulses",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, 
+			command= lambda: self.open_adpd103_docs('38'))
 		self.num_pulses_slot_A_text.grid(row = 2, column = 0)
 		self.num_pulses_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_LED_control_box_A, from_ = 0, to = 100, increment = 1, 
 			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
@@ -228,8 +233,9 @@ class config_highlevel:
 		self.frame_slot_A_LED_control_box_B = tk.LabelFrame(self.frame_slot_A_LED_control, bg = settings.back_color)
 		self.frame_slot_A_LED_control_box_B.grid(row = 1, column = 0)
 
-		self.slot_A_TIA_gain_text = tk.Label(self.frame_slot_A_LED_control_box_B, text = "TIA Gain",
-			fg= settings.font_color, bg = settings.back_color)
+		self.slot_A_TIA_gain_text = tk.Button(self.frame_slot_A_LED_control_box_B, text = "TIA Gain",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, 
+			command= lambda: self.open_adpd103_docs('40'))
 		self.slot_A_TIA_gain_text.grid(row = 0, column = 0)
 		options_slot_A_TIA_gain = ('25k','50k','100k','200k')
 
@@ -252,8 +258,9 @@ class config_highlevel:
 			fg= settings.font_color, bg = settings.back_color)
 		self.frame_slot_B_LED_control_box_A.grid(row = 0, column = 0, pady = 10, padx = 5)
 
-		self.slot_B_LED_text = tk.Label(self.frame_slot_B_LED_control_box_A, text = "LED",
-			fg= settings.font_color, bg = settings.back_color)
+		self.slot_B_LED_text = tk.Button(self.frame_slot_B_LED_control_box_A, text = "LED",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, 
+			command= lambda: self.open_adpd103_docs('31'))
 		self.slot_B_LED_text.grid(row = 0, column = 0)
 		options_slotB_LED = ('LED NONE', 'LED 1', 'LED 2', 'LED 3')
 		self.default_options_slotB_LED = tk.StringVar()
@@ -275,8 +282,9 @@ class config_highlevel:
 		self.slot_B_LED_status_option_menu["highlightthickness"] = 0
 		self.slot_B_LED_status_option_menu.grid(row = 1, column = 1, sticky = tk.W+tk.E+tk.N+tk.S)
 
-		self.num_pulses_slot_B_text = tk.Label(self.frame_slot_B_LED_control_box_A, text = "Number of Pulses",
-			fg= settings.font_color, bg = settings.back_color)
+		self.num_pulses_slot_B_text = tk.Button(self.frame_slot_B_LED_control_box_A, text = "Number of Pulses",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, 
+			command= lambda: self.open_adpd103_docs('38'))
 		self.num_pulses_slot_B_text.grid(row = 2, column = 0)
 		self.num_pulses_slot_B_spinbox = tk.Spinbox(self.frame_slot_B_LED_control_box_A, from_ = 0, to = 100, increment = 1,
 		 width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
@@ -285,8 +293,9 @@ class config_highlevel:
 		self.frame_slot_B_LED_control_box_B = tk.LabelFrame(self.frame_slot_B_LED_control, bg = settings.back_color)
 		self.frame_slot_B_LED_control_box_B.grid(row = 1, column = 0)
 
-		self.slot_B_TIA_gain_text = tk.Label(self.frame_slot_B_LED_control_box_B, text = "TIA Gain",
-			fg= settings.font_color, bg = settings.back_color)
+		self.slot_B_TIA_gain_text = tk.Button(self.frame_slot_B_LED_control_box_B, text = "TIA Gain",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, 
+			command= lambda: self.open_adpd103_docs('40'))
 		self.slot_B_TIA_gain_text.grid(row = 0, column = 0)
 		options_slot_B_TIA_gain = ('25k','50k','100k','200k')
 
@@ -305,8 +314,9 @@ class config_highlevel:
 		self.frame_slot_A_timing_control.columnconfigure(0, weight = 3)
 		self.frame_slot_A_timing_control.columnconfigure(1, weight = 1)
 
-		self.AFE_width_slot_A_text = tk.Label(self.frame_slot_A_timing_control, text = "AFE Width (us)",
-			fg= settings.font_color, bg = settings.back_color)
+		self.AFE_width_slot_A_text = tk.Button(self.frame_slot_A_timing_control, text = "AFE Width (us)",
+			fg= settings.font_color, bg = settings.back_color, bd = 0, activebackground= settings.back_color, 
+			command= lambda: self.open_adpd103_docs('19'))
 		self.AFE_width_slot_A_text.grid(row = 0, column = 0)
 		self.AFE_width_slot_A_spinbox = tk.Spinbox(self.frame_slot_A_timing_control, from_ = 0, to = 100, increment = 1,
 			width = 5, fg= settings.font_color, bg = settings.back_color, buttonbackground = settings.back_color, justify = tk.RIGHT)
@@ -400,7 +410,7 @@ class config_highlevel:
 		self.frame_LED_3_current(self.frame_all_LED_currents)
 
 		self.apply_ppg_changes_high_level = tk.Button(self.frame_all_LED_currents, text = "Apply",
-		 fg= settings.font_color, bg = settings.back_color, padx = 10, pady = 10)
+		 fg= settings.font_color, bg = settings.back_color, padx = 10, pady = 10, command = self.open_rickroll)
 		self.apply_ppg_changes_high_level.config(font=(10))
 		self.apply_ppg_changes_high_level.grid(row = 0, column = 3)
 
@@ -616,8 +626,8 @@ class config_highlevel:
 		self.LED_3_mA_text.grid(row = 0, column = 2, sticky = tk.E)
 
 	def open_adpd103_docs(self, pageString):
-		pdf_link = '\ADPD105-106-107.pdf' + "\"#page=22\""
+		pdf_link = "file:///" + self.path + "/ADPD105-106-107.pdf#page=" + pageString
+		webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s").open(pdf_link)
 
-		print pageString
-		subprocess.Popen([path + pdf_link],shell=True)
-
+	def open_rickroll(self):
+		webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s").open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
